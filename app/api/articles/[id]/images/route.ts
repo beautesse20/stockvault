@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { v2 as cloudinary } from "cloudinary";
 
 const AIRTABLE_TOKEN          = process.env.AIRTABLE_TOKEN!;
 const AIRTABLE_BASE_ID        = process.env.AIRTABLE_BASE_ID!;
 const AIRTABLE_TABLE_ARTICLES = process.env.AIRTABLE_TABLE_ARTICLES!;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key:    process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
 
 export async function POST(
   req: NextRequest,
@@ -16,43 +23,42 @@ export async function POST(
 
     const bytes  = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const base64 = buffer.toString("base64");
+    const dataUri = `data:${file.type};base64,${base64}`;
 
-    // 1) Upload vers transfer.sh pour obtenir une URL publique
-    const transferRes = await fetch(`https://transfer.sh/${file.name}`, {
-      method: "PUT",
-      headers: { "Content-Type": file.type },
-      body: buffer,
+    // 1) Upload vers Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(dataUri, {
+      folder:           "stockvault",
+      resource_type:    "image",
+      quality:          "auto",
+      fetch_format:     "auto",
     });
 
-    if (!transferRes.ok) {
-      return NextResponse.json({ error: "Erreur hébergement temporaire" }, { status: 500 });
-    }
+    const publicUrl = uploadResult.secure_url;
+    console.log("Cloudinary URL:", publicUrl);
 
-    const publicUrl = await transferRes.text();
-    console.log("URL publique:", publicUrl.trim());
-
-    // 2) Récupérer images existantes
+    // 2) Récupérer images existantes dans Airtable
     const resGet = await fetch(
       `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
       { headers: { "Authorization": `Bearer ${AIRTABLE_TOKEN}` } }
     );
-    const article = await resGet.json();
+    const article  = await resGet.json();
     const existing = (article.fields?.Images || []).map((img: any) => ({ id: img.id }));
 
-    // 3) Ajouter la nouvelle image via URL publique
+    // 3) Ajouter la nouvelle image via URL Cloudinary
     const resPatch = await fetch(
       `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
       {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${AIRTABLE_TOKEN}`,
-          "Content-Type": "application/json",
+          "Content-Type":  "application/json",
         },
         body: JSON.stringify({
           fields: {
             Images: [
               ...existing,
-              { url: publicUrl.trim(), filename: file.name }
+              { url: publicUrl, filename: file.name }
             ]
           }
         }),
@@ -60,7 +66,7 @@ export async function POST(
     );
 
     const result = await resPatch.json();
-    console.log("Airtable status:", resPatch.status, JSON.stringify(result).substring(0, 200));
+    console.log("Airtable status:", resPatch.status);
 
     if (!resPatch.ok) {
       return NextResponse.json({ error: result.error?.message || "Erreur Airtable" }, { status: 500 });
@@ -68,7 +74,7 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    console.log("Erreur:", e.message);
+    console.log("Erreur upload:", e.message);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
@@ -96,7 +102,7 @@ export async function DELETE(
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${AIRTABLE_TOKEN}`,
-          "Content-Type": "application/json",
+          "Content-Type":  "application/json",
         },
         body: JSON.stringify({
           fields: {
