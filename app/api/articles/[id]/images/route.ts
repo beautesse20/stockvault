@@ -7,11 +7,12 @@ const AIRTABLE_TABLE_ARTICLES = process.env.AIRTABLE_TABLE_ARTICLES!;
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id }   = await params;
     const formData = await req.formData();
-    const file = formData.get("file") as File;
+    const file     = formData.get("file") as File;
     if (!file) return NextResponse.json({ error: "Fichier manquant" }, { status: 400 });
 
     const bytes    = await file.arrayBuffer();
@@ -19,7 +20,7 @@ export async function POST(
     const base64   = buffer.toString("base64");
     const mimeType = file.type || "image/jpeg";
 
-    const article        = await getArticle(params.id);
+    const article        = await getArticle(id);
     const existingImages = article.images || [];
 
     if (existingImages.length >= 10) {
@@ -28,7 +29,7 @@ export async function POST(
 
     const newImage  = { url: `data:${mimeType};base64,${base64}`, filename: file.name };
     const allImages = [...existingImages, newImage];
-    const url       = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${params.id}`;
+    const url       = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`;
 
     const res = await fetch(url, {
       method:  "PATCH",
@@ -49,16 +50,17 @@ export async function POST(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const body        = await req.json();
-    const imageIndex  = body.imageIndex;
-    const article     = await getArticle(params.id);
-    const images      = [...(article.images || [])];
+    const { id }   = await params;
+    const body       = await req.json();
+    const imageIndex = body.imageIndex;
+    const article    = await getArticle(id);
+    const images     = [...(article.images || [])];
     images.splice(imageIndex, 1);
 
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${params.id}`;
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`;
 
     await fetch(url, {
       method:  "PATCH",

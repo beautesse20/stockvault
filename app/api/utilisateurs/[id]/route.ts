@@ -3,11 +3,12 @@ import { updateUtilisateur, deleteUtilisateur } from "@/lib/airtable";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const fields = await req.json();
-    await updateUtilisateur(params.id, fields);
+    await updateUtilisateur(id, fields);
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
@@ -16,10 +17,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await deleteUtilisateur(params.id);
+    const { id } = await params;
+    await deleteUtilisateur(id);
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
