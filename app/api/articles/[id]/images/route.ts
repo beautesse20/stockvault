@@ -26,8 +26,7 @@ export async function POST(
     );
 
     const res = await fetch(
-      `https://content.airtable.com/v0/${AIRTABLE_BASE_ID}/${id}/Images/uploadAttachment`,
-      {
+`https://content.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}/Images/uploadAttachment`,      {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${AIRTABLE_TOKEN}`,
