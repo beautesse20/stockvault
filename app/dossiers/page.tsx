@@ -88,12 +88,15 @@ export default function DossiersPage() {
           <div className="text-3xl font-black text-indigo-400">{dossiers.length}</div>
           <div className="text-white/40 text-xs mt-1">Dossiers actifs</div>
         </div>
-        <div className="bg-white/5 border border-white/8 rounded-2xl p-4">
-          <div className="text-3xl font-black text-emerald-400">
-            {dossiers.reduce((s, d) => s + (d.articleIds?.length || 0), 0)}
-          </div>
-          <div className="text-white/40 text-xs mt-1">Articles total</div>
-        </div>
+        <div
+  onClick={() => router.push("/articles")}
+  className="bg-white/5 border border-white/8 rounded-2xl p-4 cursor-pointer active:scale-95 transition-all"
+>
+  <div className="text-3xl font-black text-emerald-400">
+    {dossiers.reduce((s, d) => s + (d.articleIds?.length || 0), 0)}
+  </div>
+  <div className="text-white/40 text-xs mt-1">Articles total</div>
+</div>
       </div>
 
       {/* Liste dossiers */}
