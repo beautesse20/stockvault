@@ -32,6 +32,7 @@ export async function POST(
     });
 
     const data = await res.json();
+    console.log("Airtable response:", res.status, JSON.stringify(data));
     
     if (!res.ok) {
       return NextResponse.json({ error: data.error?.message || "Erreur Airtable" }, { status: 500 });
