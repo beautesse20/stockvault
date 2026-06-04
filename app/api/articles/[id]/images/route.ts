@@ -16,55 +16,36 @@ export async function POST(
 
     const bytes  = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const base64 = buffer.toString("base64");
 
-    // Récupérer les images existantes
-    const resGet = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
-      { headers: { "Authorization": `Bearer ${AIRTABLE_TOKEN}` } }
+    // API native Airtable pour upload de fichiers
+    const uploadForm = new FormData();
+    uploadForm.append(
+      "file",
+      new Blob([buffer], { type: file.type }),
+      file.name
     );
-    const existing = await resGet.json();
-    const currentImages = existing.fields?.Images || [];
 
-    console.log("Images existantes:", currentImages.length);
-    console.log("Fichier reçu:", file.name, file.type, buffer.length, "bytes");
-
-    if (currentImages.length >= 10) {
-      return NextResponse.json({ error: "Maximum 10 photos atteint" }, { status: 400 });
-    }
-
-    // Ajouter via URL data (méthode supportée par Airtable)
-    const newImages = [
-      ...currentImages.map((img: any) => ({ id: img.id })),
+    const res = await fetch(
+      `https://content.airtable.com/v0/${AIRTABLE_BASE_ID}/${id}/Images/uploadAttachment`,
       {
-        url: `data:${file.type};base64,${base64}`,
-        filename: file.name,
-      }
-    ];
-
-    const resPatch = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
-      {
-        method: "PATCH",
+        method: "POST",
         headers: {
           "Authorization": `Bearer ${AIRTABLE_TOKEN}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ fields: { Images: newImages } }),
+        body: uploadForm,
       }
     );
 
-    const result = await resPatch.json();
-    console.log("Airtable PATCH status:", resPatch.status);
-    console.log("Airtable PATCH result:", JSON.stringify(result).substring(0, 300));
+    const result = await res.json();
+    console.log("Upload status:", res.status, JSON.stringify(result).substring(0, 300));
 
-    if (!resPatch.ok) {
-      return NextResponse.json({ error: result.error?.message || "Erreur Airtable" }, { status: 500 });
+    if (!res.ok) {
+      return NextResponse.json({ error: result.error?.message || "Erreur upload" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    console.log("Erreur upload:", e.message);
+    console.log("Erreur:", e.message);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
