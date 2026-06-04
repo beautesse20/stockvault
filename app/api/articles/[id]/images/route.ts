@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getArticle } from "@/lib/airtable";
 
 const AIRTABLE_TOKEN          = process.env.AIRTABLE_TOKEN!;
 const AIRTABLE_BASE_ID        = process.env.AIRTABLE_BASE_ID!;
@@ -17,32 +16,28 @@ export async function POST(
 
     const bytes    = await file.arrayBuffer();
     const buffer   = Buffer.from(bytes);
-    const base64   = buffer.toString("base64");
-    const mimeType = file.type || "image/jpeg";
 
-    const article        = await getArticle(id);
-    const existingImages = article.images || [];
+    // Utiliser l'API d'upload natif Airtable
+    const url = `https://content.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}/Images/uploadAttachment`;
 
-    if (existingImages.length >= 10) {
-      return NextResponse.json({ error: "Maximum 10 photos atteint" }, { status: 400 });
-    }
-
-    const newImage  = { url: `data:${mimeType};base64,${base64}`, filename: file.name };
-    const allImages = [...existingImages, newImage];
-    const url       = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`;
+    const airtableForm = new FormData();
+    const blob = new Blob([buffer], { type: file.type });
+    airtableForm.append("file", blob, file.name);
+    airtableForm.append("filename", file.name);
 
     const res = await fetch(url, {
-      method:  "PATCH",
-      headers: { "Authorization": `Bearer ${AIRTABLE_TOKEN}`, "Content-Type": "application/json" },
-      body:    JSON.stringify({ fields: { Images: allImages } }),
+      method:  "POST",
+      headers: { "Authorization": `Bearer ${AIRTABLE_TOKEN}` },
+      body:    airtableForm,
     });
 
+    const data = await res.json();
+    
     if (!res.ok) {
-      const err = await res.json();
-      return NextResponse.json({ error: err.error?.message || "Erreur Airtable" }, { status: 500 });
+      return NextResponse.json({ error: data.error?.message || "Erreur Airtable" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -53,20 +48,31 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id }   = await params;
+    const { id }     = await params;
     const body       = await req.json();
     const imageIndex = body.imageIndex;
-    const article    = await getArticle(id);
-    const images     = [...(article.images || [])];
+
+    // Récupérer l'article pour avoir les IDs des attachments
+    const resGet = await fetch(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
+      { headers: { "Authorization": `Bearer ${AIRTABLE_TOKEN}` } }
+    );
+    const article = await resGet.json();
+    const images  = article.fields?.Images || [];
     images.splice(imageIndex, 1);
 
-    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`;
+    const res = await fetch(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
+      {
+        method:  "PATCH",
+        headers: { "Authorization": `Bearer ${AIRTABLE_TOKEN}`, "Content-Type": "application/json" },
+        body:    JSON.stringify({ fields: { Images: images.map((img: any) => ({ id: img.id })) } }),
+      }
+    );
 
-    await fetch(url, {
-      method:  "PATCH",
-      headers: { "Authorization": `Bearer ${AIRTABLE_TOKEN}`, "Content-Type": "application/json" },
-      body:    JSON.stringify({ fields: { Images: images } }),
-    });
+    if (!res.ok) {
+      return NextResponse.json({ error: "Erreur suppression" }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
