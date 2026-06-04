@@ -2,24 +2,26 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getSession, isAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
 import Button from "@/components/ui/Button";
 
 export default function ArticlePage() {
-  const [article, setArticle]       = useState<Article | null>(null);
-  const [dossiers, setDossiers]     = useState<Dossier[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [editing, setEditing]       = useState(false);
-  const [saving, setSaving]         = useState(false);
-  const [uploading, setUploading]   = useState(false);
-  const [showMove, setShowMove]     = useState(false);
-  const [photoIdx, setPhotoIdx]     = useState(0);
-  const [form, setForm]             = useState<Partial<Article>>({});
-  const fileRef                     = useRef<HTMLInputElement>(null);
-  const router                      = useRouter();
-  const params                      = useParams();
-  const id                          = params.id as string;
+  const [article, setArticle]     = useState<Article | null>(null);
+  const [dossiers, setDossiers]   = useState<Dossier[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [editing, setEditing]     = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [showMove, setShowMove]   = useState(false);
+  const [photoIdx, setPhotoIdx]   = useState(0);
+  const [lightbox, setLightbox]   = useState(false);
+  const [form, setForm]           = useState<Partial<Article>>({});
+  const fileRef                   = useRef<HTMLInputElement>(null);
+  const touchStartX               = useRef(0);
+  const router                    = useRouter();
+  const params                    = useParams();
+  const id                        = params.id as string;
 
   useEffect(() => {
     const user = getSession();
@@ -78,6 +80,7 @@ export default function ArticlePage() {
       console.error(e);
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -110,6 +113,28 @@ export default function ArticlePage() {
     }
   };
 
+  const nextPhoto = () => {
+    if (!article?.images) return;
+    setPhotoIdx(i => (i + 1) % article.images!.length);
+  };
+
+  const prevPhoto = () => {
+    if (!article?.images) return;
+    setPhotoIdx(i => (i - 1 + article.images!.length) % article.images!.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextPhoto();
+      else prevPhoto();
+    }
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-[#0f0f13] flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-white/20 border-t-indigo-500 rounded-full animate-spin" />
@@ -126,13 +151,19 @@ export default function ArticlePage() {
 
   return (
     <div className="min-h-screen bg-[#0f0f13] text-white">
-      {/* Galerie photo */}
-      <div className="relative w-full aspect-square bg-white/5">
+
+      {/* Galerie photo principale */}
+      <div
+        className="relative w-full aspect-square bg-white/5"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {images.length > 0 ? (
           <img
             src={images[photoIdx]?.url}
             alt={article.nom}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover cursor-pointer"
+            onClick={() => setLightbox(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-white/20 flex-col gap-3">
@@ -157,6 +188,24 @@ export default function ArticlePage() {
           >
             🗑
           </button>
+        )}
+
+        {/* Flèches navigation */}
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={prevPhoto}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-lg"
+            >
+              ‹
+            </button>
+            <button
+              onClick={nextPhoto}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-lg"
+            >
+              ›
+            </button>
+          </>
         )}
 
         {/* Dots navigation */}
@@ -225,7 +274,6 @@ export default function ArticlePage() {
             ))}
           </div>
         ) : (
-          /* Formulaire édition */
           <div className="flex flex-col gap-3 mb-6">
             {[
               { label: "Nom",      key: "nom" },
@@ -277,7 +325,7 @@ export default function ArticlePage() {
             {images.map((img: any, i: number) => (
               <button
                 key={i}
-                onClick={() => setPhotoIdx(i)}
+                onClick={() => { setPhotoIdx(i); setLightbox(true); }}
                 className={`w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 border-2 transition-all ${
                   i === photoIdx ? "border-indigo-500" : "border-transparent"
                 }`}
@@ -295,17 +343,19 @@ export default function ArticlePage() {
                   <div className="w-4 h-4 border-2 border-white/20 border-t-indigo-500 rounded-full animate-spin" />
                 ) : (
                   <>
-                    <span className="text-xl">＋</span>
+                    <span className="text-xl">📷</span>
                     <span>Photo</span>
                   </>
                 )}
               </button>
             )}
           </div>
+          {/* Input caméra directe */}
           <input
             ref={fileRef}
             type="file"
             accept="image/*"
+            capture="environment"
             className="hidden"
             onChange={handleUpload}
           />
@@ -366,6 +416,57 @@ export default function ArticlePage() {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox plein écran */}
+      {lightbox && images.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black z-50 flex items-center justify-center"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <button
+            onClick={() => setLightbox(false)}
+            className="absolute top-14 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl z-10"
+          >
+            ✕
+          </button>
+
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prevPhoto}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-2xl z-10"
+              >
+                ‹
+              </button>
+              <button
+                onClick={nextPhoto}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-2xl z-10"
+              >
+                ›
+              </button>
+            </>
+          )}
+
+          <img
+            src={images[photoIdx]?.url}
+            alt=""
+            className="max-w-full max-h-full object-contain"
+          />
+
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+            {images.map((_: any, i: number) => (
+              <button
+                key={i}
+                onClick={() => setPhotoIdx(i)}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === photoIdx ? "w-5 bg-white" : "w-1.5 bg-white/40"
+                }`}
+              />
+            ))}
           </div>
         </div>
       )}
