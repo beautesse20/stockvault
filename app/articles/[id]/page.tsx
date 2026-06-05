@@ -65,24 +65,30 @@ export default function ArticlePage() {
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+
+  const remaining = 10 - (article?.images?.length || 0);
+  const toUpload  = files.slice(0, remaining);
+
   setUploading(true);
   try {
-    const formData = new FormData();
-    formData.append("file", file);
-    await fetch(`/api/articles/${id}/images`, {
-      method: "POST",
-      body: formData,
-    });
-    await fetchData();
-    // Réouvrir automatiquement la caméra si moins de 10 photos
-    if (fileRef.current) {
-      fileRef.current.value = "";
-      if ((article?.images?.length || 0) < 9) {
-        setTimeout(() => fileRef.current?.click(), 300);
-      }
+    for (const file of toUpload) {
+      const formData = new FormData();
+      formData.append("file", file);
+      await fetch(`/api/articles/${id}/images`, {
+        method: "POST",
+        body: formData,
+      });
     }
+    await fetchData();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+};
   } catch (e) {
     console.error(e);
   } finally {
@@ -358,12 +364,13 @@ export default function ArticlePage() {
           </div>
           {/* Input fichier */}
           <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleUpload}
-          />
+  ref={fileRef}
+  type="file"
+  accept="image/*"
+  multiple
+  className="hidden"
+  onChange={handleUpload}
+/>
         </div>
 
         {/* Boutons */}
