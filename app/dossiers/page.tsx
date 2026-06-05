@@ -2,16 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSession, clearSession, isAdmin } from "@/lib/auth";
+import { getSession, clearSession } from "@/lib/auth";
 import { Dossier } from "@/lib/airtable";
-import Card from "@/components/ui/Card";
-import Button from "@/components/ui/Button";
 
 export default function DossiersPage() {
-  const [dossiers, setDossiers]   = useState<Dossier[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [userName, setUserName]   = useState("");
-  const [admin, setAdmin]         = useState(false);
+  const [dossiers, setDossiers] = useState<Dossier[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [userName, setUserName] = useState("");
+  const [admin, setAdmin]       = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,13 +25,10 @@ export default function DossiersPage() {
       const res  = await fetch("/api/dossiers");
       const data = await res.json();
       const all: Dossier[] = data.dossiers || [];
-
-      // Admin voit tout, Standard voit seulement ses dossiers
       if (user.role === "Admin") {
         setDossiers(all);
       } else {
-        const allowed = all.filter(d => user.dossierIds?.includes(d.id));
-        setDossiers(allowed);
+        setDossiers(all.filter(d => user.dossierIds?.includes(d.id)));
       }
     } catch (e) {
       console.error(e);
@@ -42,92 +37,175 @@ export default function DossiersPage() {
     }
   };
 
-  const emojis = ["🏠","📦","🚗","🏪","🏭","📫"];
+  const totalArticles = dossiers.reduce((s, d) => s + (d.articleIds?.length || 0), 0);
+
   const colors = [
-    "from-indigo-500/20 to-indigo-500/5 border-indigo-500/20",
-    "from-pink-500/20 to-pink-500/5 border-pink-500/20",
-    "from-emerald-500/20 to-emerald-500/5 border-emerald-500/20",
+    "rgba(255,77,90,0.15)",
+    "rgba(255,140,66,0.15)",
+    "rgba(108,99,255,0.15)",
+    "rgba(16,185,129,0.15)",
+    "rgba(99,102,241,0.15)",
+    "rgba(236,72,153,0.15)",
   ];
 
+  const emojis = ["🏠","📦","🚗","🏪","🏭","📫"];
+
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0f13] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-white/20 border-t-indigo-500 rounded-full animate-spin" />
+    <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: "32px", height: "32px", border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0f0f13] text-white">
-      {/* Header */}
-      <div className="px-5 pt-14 pb-4">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-semibold tracking-widest text-indigo-400 uppercase">StockVault</span>
-          <div className="flex items-center gap-3">
+    <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", flexDirection: "column" }}>
+
+      {/* Zone blanche */}
+      <div style={{
+        background: "#f7f8fc",
+        borderRadius: "0 0 0 80px",
+        paddingTop: "60px",
+        paddingLeft: "20px",
+        paddingRight: "20px",
+        paddingBottom: "28px",
+        position: "relative",
+        zIndex: 2,
+      }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
+          <div>
+            <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "3px" }}>Bonjour 👋</p>
+            <h1 style={{ fontSize: "24px", fontWeight: 900, color: "#1a1f3a" }}>Mes dossiers</h1>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
             {admin && (
-              <button
-                onClick={() => router.push("/admin")}
-                className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-lg"
-              >
-                ⚙️
-              </button>
+              <button onClick={() => router.push("/admin")} style={{
+                width: "40px", height: "40px", borderRadius: "13px",
+                background: "white", border: "none", cursor: "pointer",
+                boxShadow: "0 3px 10px rgba(26,31,58,0.1)", fontSize: "18px",
+              }}>⚙️</button>
             )}
-            <button
-              onClick={() => { clearSession(); router.push("/"); }}
-              className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-lg"
-            >
-              👤
+            <button onClick={() => { clearSession(); router.push("/"); }} style={{
+              width: "40px", height: "40px", borderRadius: "13px",
+              background: "linear-gradient(135deg, #ff4d5a, #ff6b35)",
+              border: "none", cursor: "pointer", fontSize: "16px",
+              fontWeight: 800, color: "white",
+              boxShadow: "0 6px 16px rgba(255,77,90,0.35)",
+            }}>
+              {userName.charAt(0).toUpperCase()}
             </button>
           </div>
         </div>
-        <h1 className="text-2xl font-black">Mes dossiers</h1>
-        <p className="text-white/40 text-sm mt-1">Bonjour, {userName} 👋</p>
-      </div>
 
-      {/* Stats */}
-      <div className="px-5 grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-white/5 border border-white/8 rounded-2xl p-4">
-          <div className="text-3xl font-black text-indigo-400">{dossiers.length}</div>
-          <div className="text-white/40 text-xs mt-1">Dossiers actifs</div>
+        {/* Hero card */}
+        <div style={{
+          background: "linear-gradient(135deg, #1a1f3a 0%, #2d1b69 60%, #1e2d6b 100%)",
+          borderRadius: "22px",
+          padding: "18px",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 12px 30px rgba(26,31,58,0.3)",
+        }}>
+          <div style={{ position: "absolute", top: "-40px", right: "-40px", width: "130px", height: "130px", background: "radial-gradient(circle, rgba(255,77,90,0.3), transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: "-30px", left: "-20px", width: "110px", height: "110px", background: "radial-gradient(circle, rgba(108,99,255,0.25), transparent 70%)", pointerEvents: "none" }} />
+
+          <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "12px", position: "relative" }}>
+            Vue d'ensemble
+          </p>
+
+          <div style={{ display: "flex", marginBottom: "14px", position: "relative" }}>
+            {[
+              { num: dossiers.length, lbl: "Dossiers" },
+              { num: totalArticles, lbl: "Articles" },
+            ].map((s, i) => (
+              <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ fontSize: "30px", fontWeight: 900, color: "white", lineHeight: 1 }}>{s.num}</div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>{s.lbl}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "rgba(255,255,255,0.35)", marginBottom: "6px" }}>
+              <span>Photos complétées</span><span>60%</span>
+            </div>
+            <div style={{ height: "4px", background: "rgba(255,255,255,0.1)", borderRadius: "2px", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: "60%", background: "linear-gradient(90deg, #ff4d5a, #ff8c42)", borderRadius: "2px" }} />
+            </div>
+          </div>
         </div>
-        <div
-  onClick={() => router.push("/articles")}
-  className="bg-white/5 border border-white/8 rounded-2xl p-4 cursor-pointer active:scale-95 transition-all"
->
-  <div className="text-3xl font-black text-emerald-400">
-    {dossiers.reduce((s, d) => s + (d.articleIds?.length || 0), 0)}
-  </div>
-  <div className="text-white/40 text-xs mt-1">Articles total</div>
-</div>
       </div>
 
-      {/* Liste dossiers */}
-      <div className="px-5 flex flex-col gap-3">
+      {/* Zone bleu nuit */}
+      <div style={{
+        flex: 1,
+        background: "#1a1f3a",
+        borderRadius: "0 80px 0 0",
+        marginTop: "-40px",
+        paddingTop: "50px",
+        paddingLeft: "20px",
+        paddingRight: "20px",
+        paddingBottom: "100px",
+        position: "relative",
+        zIndex: 1,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "1px" }}>
+            Dossiers récents
+          </p>
+          <button onClick={() => router.push("/articles")} style={{
+            background: "none", border: "none", color: "#ff4d5a",
+            fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+          }}>
+            Voir tout →
+          </button>
+        </div>
+
         {dossiers.length === 0 && (
-          <div className="text-center text-white/30 py-16">
-            <div className="text-5xl mb-4">📂</div>
+          <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", paddingTop: "60px" }}>
+            <div style={{ fontSize: "48px", marginBottom: "12px" }}>📂</div>
             <p>Aucun dossier disponible</p>
           </div>
         )}
+
         {dossiers.map((d, i) => (
-          <div
-            key={d.id}
-            onClick={() => router.push(`/dossiers/${d.id}`)}
-            className={`bg-gradient-to-br ${colors[i % colors.length]} border rounded-3xl p-5 flex items-center gap-4 cursor-pointer active:scale-95 transition-all`}
-          >
-            <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-2xl flex-shrink-0">
+          <div key={d.id} onClick={() => router.push(`/dossiers/${d.id}`)} style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: "18px",
+            padding: "14px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "10px",
+            cursor: "pointer",
+            transition: "all 0.2s",
+          }}>
+            <div style={{
+              width: "42px", height: "42px", borderRadius: "14px",
+              background: colors[i % colors.length],
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "20px", flexShrink: 0,
+            }}>
               {emojis[i % emojis.length]}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-base">{d.nom}</div>
-              <div className="text-white/40 text-sm mt-0.5">
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: "14px", fontWeight: 700, color: "white", marginBottom: "2px" }}>{d.nom}</p>
+              <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
                 {d.articleIds?.length || 0} article{(d.articleIds?.length || 0) > 1 ? "s" : ""}
-              </div>
+              </p>
             </div>
-            <div className="text-white/30 text-2xl">›</div>
+            <div style={{
+              padding: "4px 10px", borderRadius: "50px", fontSize: "10px", fontWeight: 700,
+              background: "rgba(255,77,90,0.15)", color: "#ff4d5a",
+            }}>
+              {d.articleIds?.length || 0} photos
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="h-24" />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

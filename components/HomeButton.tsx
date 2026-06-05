@@ -6,13 +6,29 @@ export default function HomeButton() {
   const router   = useRouter();
   const pathname = usePathname();
 
-  // Cacher sur la page login et la page dossiers (accueil)
   if (pathname === "/" || pathname === "/dossiers") return null;
 
   return (
     <button
       onClick={() => router.push("/dossiers")}
-      className="fixed bottom-8 right-5 w-14 h-14 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/40 flex items-center justify-center text-2xl z-50 active:scale-90 transition-all"
+      style={{
+        position: "fixed",
+        bottom: "32px",
+        right: "20px",
+        width: "52px",
+        height: "52px",
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, #ff4d5a, #ff6b35)",
+        border: "none",
+        cursor: "pointer",
+        fontSize: "22px",
+        zIndex: 50,
+        boxShadow: "0 8px 24px rgba(255,77,90,0.45)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "all 0.2s",
+      }}
     >
       🏠
     </button>

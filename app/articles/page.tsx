@@ -27,20 +27,13 @@ export default function ArticlesPage() {
       ]);
       const dataA = await resA.json();
       const dataD = await resD.json();
-
       const allDossiers: Dossier[] = dataD.dossiers || [];
       const allArticles: Article[] = dataA.articles || [];
-
       setDossiers(allDossiers);
-
-      // Admin voit tout, Standard voit seulement ses dossiers
       if (user.role === "Admin") {
         setArticles(allArticles);
       } else {
-        const allowed = allArticles.filter(a =>
-          user.dossierIds?.includes(a.dossierId || "")
-        );
-        setArticles(allowed);
+        setArticles(allArticles.filter(a => user.dossierIds?.includes(a.dossierId || "")));
       }
     } catch (e) {
       console.error(e);
@@ -59,115 +52,149 @@ export default function ArticlesPage() {
     })
     .filter(a => {
       if (!search) return true;
-      return (
-        a.nom.toLowerCase().includes(search.toLowerCase()) ||
-        a.ref.toLowerCase().includes(search.toLowerCase())
-      );
+      return a.nom.toLowerCase().includes(search.toLowerCase()) ||
+             a.ref.toLowerCase().includes(search.toLowerCase());
     });
 
+  const gradients = [
+    "linear-gradient(135deg, rgba(255,77,90,0.2), rgba(255,140,66,0.08))",
+    "linear-gradient(135deg, rgba(108,99,255,0.2), rgba(16,185,129,0.08))",
+    "linear-gradient(135deg, rgba(255,140,66,0.2), rgba(255,77,90,0.08))",
+    "linear-gradient(135deg, rgba(16,185,129,0.2), rgba(108,99,255,0.08))",
+  ];
+
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0f13] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-white/20 border-t-indigo-500 rounded-full animate-spin" />
+    <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: "32px", height: "32px", border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0f0f13] text-white">
-      {/* Header */}
-      <div className="px-5 pt-14 pb-4">
-        <button
-          onClick={() => router.push("/dossiers")}
-          className="text-indigo-400 text-sm font-medium mb-3 flex items-center gap-1"
-        >
-          ‹ Retour
-        </button>
-        <h1 className="text-2xl font-black">Tous les articles</h1>
-        <p className="text-white/40 text-sm mt-1">{articles.length} article{articles.length > 1 ? "s" : ""}</p>
-      </div>
+    <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", flexDirection: "column" }}>
 
-      {/* Recherche */}
-      <div className="px-5 mb-4">
-        <div className="bg-white/5 border border-white/8 rounded-2xl px-4 py-3 flex items-center gap-3">
-          <span className="text-white/30">🔍</span>
+      {/* Zone blanche */}
+      <div style={{
+        background: "#f7f8fc",
+        borderRadius: "0 0 0 80px",
+        paddingTop: "60px",
+        paddingLeft: "20px",
+        paddingRight: "20px",
+        paddingBottom: "24px",
+        position: "relative",
+        zIndex: 2,
+      }}>
+        <button onClick={() => router.push("/dossiers")} style={{
+          background: "none", border: "none", color: "#ff4d5a",
+          fontSize: "14px", fontWeight: 600, cursor: "pointer",
+          fontFamily: "inherit", marginBottom: "12px",
+        }}>‹ Retour</button>
+
+        <h1 style={{ fontSize: "24px", fontWeight: 900, color: "#1a1f3a", marginBottom: "4px" }}>
+          Tous les articles
+        </h1>
+        <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "16px" }}>
+          {articles.length} article{articles.length > 1 ? "s" : ""}
+        </p>
+
+        {/* Recherche */}
+        <div style={{
+          background: "white", borderRadius: "14px", padding: "12px 16px",
+          display: "flex", alignItems: "center", gap: "10px",
+          boxShadow: "0 2px 8px rgba(26,31,58,0.08)", marginBottom: "14px",
+        }}>
+          <span style={{ color: "#8892b0" }}>🔍</span>
           <input
             type="text"
-            placeholder="Rechercher un article ou une ref..."
+            placeholder="Rechercher un article ou une réf..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-transparent text-white text-sm outline-none flex-1 placeholder-white/30"
+            style={{
+              background: "none", border: "none", outline: "none",
+              fontSize: "13px", color: "#1a1f3a", flex: 1, fontFamily: "inherit",
+            }}
           />
+        </div>
+
+        {/* Filtres */}
+        <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
+          {filtres.map(f => (
+            <button key={f} onClick={() => setFiltre(f)} style={{
+              padding: "7px 14px", borderRadius: "50px", fontSize: "11px",
+              fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer",
+              fontFamily: "inherit",
+              background: filtre === f ? "#ff4d5a" : "white",
+              color: filtre === f ? "white" : "#8892b0",
+              border: filtre === f ? "none" : "1px solid #e2e5f0",
+              boxShadow: filtre === f ? "0 4px 12px rgba(255,77,90,0.3)" : "0 2px 6px rgba(26,31,58,0.06)",
+            }}>{f}</button>
+          ))}
         </div>
       </div>
 
-      {/* Filtres */}
-      <div className="px-5 flex gap-2 overflow-x-auto pb-2 mb-4">
-        {filtres.map(f => (
-          <button
-            key={f}
-            onClick={() => setFiltre(f)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              filtre === f
-                ? "bg-indigo-500 text-white"
-                : "bg-white/8 text-white/50 border border-white/10"
-            }`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
-
-      {/* Grille articles */}
-      <div className="px-5 grid grid-cols-2 gap-3">
+      {/* Zone bleu nuit */}
+      <div style={{
+        flex: 1,
+        background: "#1a1f3a",
+        borderRadius: "0 80px 0 0",
+        marginTop: "-40px",
+        paddingTop: "50px",
+        paddingLeft: "16px",
+        paddingRight: "16px",
+        paddingBottom: "100px",
+        position: "relative",
+        zIndex: 1,
+      }}>
         {articlesFiltres.length === 0 && (
-          <div className="col-span-2 text-center text-white/30 py-16">
-            <div className="text-5xl mb-4">📦</div>
+          <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", paddingTop: "60px" }}>
+            <div style={{ fontSize: "48px", marginBottom: "12px" }}>📦</div>
             <p>Aucun article</p>
           </div>
         )}
-        {articlesFiltres.map(a => (
-          <div
-            key={a.id}
-            onClick={() => router.push(`/articles/${a.id}`)}
-            className="bg-white/5 border border-white/8 rounded-2xl overflow-hidden cursor-pointer active:scale-95 transition-all"
-          >
-            {/* Image */}
-            <div className="aspect-square bg-white/5 relative flex items-center justify-center">
-              {a.images && a.images.length > 0 ? (
-                <>
-                  <img
-                    src={a.images[0].url}
-                    alt={a.nom}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs font-semibold">
-                    {a.images.length} 📷
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          {articlesFiltres.map((a, i) => (
+            <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: "18px", overflow: "hidden", cursor: "pointer",
+            }}>
+              <div style={{
+                height: "100px",
+                background: a.images && a.images.length > 0 ? "transparent" : gradients[i % gradients.length],
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "36px", position: "relative",
+              }}>
+                {a.images && a.images.length > 0 ? (
+                  <>
+                    <img src={a.images[0].url} alt={a.nom} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <div style={{
+                      position: "absolute", top: "6px", right: "6px",
+                      background: "rgba(0,0,0,0.5)", borderRadius: "8px",
+                      padding: "2px 7px", fontSize: "9px", color: "rgba(255,255,255,0.8)",
+                    }}>{a.images.length} 📷</div>
+                  </>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: "rgba(255,255,255,0.2)" }}>
+                    <span>📷</span>
+                    <span style={{ fontSize: "10px" }}>Ajouter photo</span>
                   </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center gap-2 text-white/20">
-                  <span className="text-3xl">📷</span>
-                  <span className="text-xs">Ajouter photo</span>
-                </div>
-              )}
-            </div>
-            {/* Infos */}
-            <div className="p-3">
-              <div className="text-indigo-400 text-xs font-semibold tracking-wide uppercase mb-1">
-                {a.ref}
+                )}
               </div>
-              <div className="text-sm font-semibold truncate">{a.nom}</div>
-              <div className="text-white/30 text-xs mt-0.5">
-                {dossiers.find(d => d.id === a.dossierId)?.nom || "Sans dossier"}
-              </div>
-              <div className="text-emerald-400 text-sm font-bold mt-1">
-                {a.prix ? `${a.prix} €` : "—"}
+              <div style={{ padding: "10px" }}>
+                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#ff4d5a", marginBottom: "3px" }}>{a.ref}</p>
+                <p style={{ fontSize: "12px", fontWeight: 700, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.nom}</p>
+                <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", marginTop: "1px" }}>
+                  {dossiers.find(d => d.id === a.dossierId)?.nom || "Sans dossier"}
+                </p>
+                <p style={{ fontSize: "13px", fontWeight: 800, color: "#ff8c42", marginTop: "3px" }}>{a.prix ? `${a.prix} €` : "—"}</p>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      <div className="h-24" />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

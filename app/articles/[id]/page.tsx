@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
-import Button from "@/components/ui/Button";
 
 export default function ArticlePage() {
   const [article, setArticle]     = useState<Article | null>(null);
@@ -57,99 +56,69 @@ export default function ArticlePage() {
       });
       await fetchData();
       setEditing(false);
-    } catch (e) {
-      console.error(e);
     } finally {
       setSaving(false);
     }
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = Array.from(e.target.files || []);
-  if (!files.length) return;
-
-  const remaining = 10 - (article?.images?.length || 0);
-  const toUpload  = files.slice(0, remaining);
-
-  setUploading(true);
-  try {
-    for (const file of toUpload) {
-      const formData = new FormData();
-      formData.append("file", file);
-      await fetch(`/api/articles/${id}/images`, {
-        method: "POST",
-        body: formData,
-      });
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const remaining = 10 - (article?.images?.length || 0);
+    const toUpload  = files.slice(0, remaining);
+    setUploading(true);
+    try {
+      for (const file of toUpload) {
+        const formData = new FormData();
+        formData.append("file", file);
+        await fetch(`/api/articles/${id}/images`, { method: "POST", body: formData });
+      }
+      await fetchData();
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
-    await fetchData();
-  } catch (e) {
-    console.error(e);
-  } finally {
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = "";
-  }
-};
- 
+  };
 
   const handleDeleteImage = async (index: number) => {
     if (!confirm("Supprimer cette photo ?")) return;
-    try {
-      await fetch(`/api/articles/${id}/images`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageIndex: index }),
-      });
-      await fetchData();
-      setPhotoIdx(0);
-    } catch (e) {
-      console.error(e);
-    }
+    await fetch(`/api/articles/${id}/images`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageIndex: index }),
+    });
+    await fetchData();
+    setPhotoIdx(0);
   };
 
   const handleMove = async (dossierId: string) => {
-    try {
-      await fetch(`/api/articles/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dossierId }),
-      });
-      setShowMove(false);
-      await fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    await fetch(`/api/articles/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dossierId }),
+    });
+    setShowMove(false);
+    await fetchData();
   };
 
-  const nextPhoto = () => {
-    if (!article?.images) return;
-    setPhotoIdx(i => (i + 1) % article.images!.length);
-  };
+  const nextPhoto = () => { if (article?.images) setPhotoIdx(i => (i + 1) % article.images!.length); };
+  const prevPhoto = () => { if (article?.images) setPhotoIdx(i => (i - 1 + article.images!.length) % article.images!.length); };
 
-  const prevPhoto = () => {
-    if (!article?.images) return;
-    setPhotoIdx(i => (i - 1 + article.images!.length) % article.images!.length);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd   = (e: React.TouchEvent) => {
     const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) nextPhoto();
-      else prevPhoto();
-    }
+    if (Math.abs(diff) > 50) { diff > 0 ? nextPhoto() : prevPhoto(); }
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f0f13] flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-white/20 border-t-indigo-500 rounded-full animate-spin" />
+    <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: "32px", height: "32px", border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
   if (!article) return (
-    <div className="min-h-screen bg-[#0f0f13] flex items-center justify-center text-white/40">
+    <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)" }}>
       Article introuvable
     </div>
   );
@@ -157,116 +126,120 @@ export default function ArticlePage() {
   const images = article.images || [];
 
   return (
-    <div className="min-h-screen bg-[#0f0f13] text-white">
+    <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", flexDirection: "column" }}>
 
-      {/* Galerie photo principale */}
+      {/* Zone image blanche */}
       <div
-        className="relative w-full aspect-square bg-white/5"
+        style={{
+          background: "#f0f2fc",
+          borderRadius: "0 0 0 80px",
+          height: "260px",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "80px", position: "relative", flexShrink: 0, zIndex: 2,
+          overflow: "hidden",
+        }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
         {images.length > 0 ? (
-          <img
-            src={images[photoIdx]?.url}
-            alt={article.nom}
-            className="w-full h-full object-cover cursor-pointer"
+          <img src={images[photoIdx]?.url} alt={article.nom}
+            style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }}
             onClick={() => setLightbox(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-white/20 flex-col gap-3">
-            <span className="text-6xl">📷</span>
-            <span className="text-sm">Aucune photo</span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: "rgba(26,31,58,0.2)" }}>
+            <span>📷</span>
+            <span style={{ fontSize: "14px" }}>Aucune photo</span>
           </div>
         )}
 
         {/* Bouton retour */}
-        <button
-          onClick={() => router.back()}
-          className="absolute top-14 left-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-xl"
-        >
-          ‹
-        </button>
+        <button onClick={() => router.back()} style={{
+          position: "absolute", top: "18px", left: "14px",
+          width: "36px", height: "36px", borderRadius: "11px",
+          background: "white", border: "none", cursor: "pointer",
+          boxShadow: "0 2px 10px rgba(26,31,58,0.15)",
+          fontSize: "16px", color: "#1a1f3a",
+        }}>‹</button>
+
+        {/* Compteur photos */}
+        {images.length > 0 && (
+          <div style={{
+            position: "absolute", top: "18px", right: "14px",
+            background: "white", borderRadius: "10px", padding: "5px 10px",
+            fontSize: "10px", fontWeight: 700, color: "#1a1f3a",
+            boxShadow: "0 2px 10px rgba(26,31,58,0.12)",
+          }}>{images.length} / 10 📷</div>
+        )}
 
         {/* Supprimer photo */}
         {images.length > 0 && (
-          <button
-            onClick={() => handleDeleteImage(photoIdx)}
-            className="absolute top-14 right-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-sm"
-          >
-            🗑
-          </button>
+          <button onClick={() => handleDeleteImage(photoIdx)} style={{
+            position: "absolute", bottom: "18px", right: "14px",
+            width: "32px", height: "32px", borderRadius: "10px",
+            background: "rgba(255,77,90,0.9)", border: "none", cursor: "pointer",
+            fontSize: "14px", color: "white",
+          }}>🗑</button>
         )}
 
-        {/* Flèches navigation */}
+        {/* Dots */}
         {images.length > 1 && (
-          <>
-            <button
-              onClick={prevPhoto}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-lg"
-            >
-              ‹
-            </button>
-            <button
-              onClick={nextPhoto}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-lg"
-            >
-              ›
-            </button>
-          </>
-        )}
-
-        {/* Dots navigation */}
-        {images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          <div style={{ position: "absolute", bottom: "14px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "5px" }}>
             {images.map((_: any, i: number) => (
-              <button
-                key={i}
-                onClick={() => setPhotoIdx(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === photoIdx ? "w-5 bg-white" : "w-1.5 bg-white/40"
-                }`}
-              />
+              <button key={i} onClick={() => setPhotoIdx(i)} style={{
+                height: "5px", width: i === photoIdx ? "14px" : "5px",
+                borderRadius: "3px", border: "none", cursor: "pointer",
+                background: i === photoIdx ? "#ff4d5a" : "rgba(26,31,58,0.2)",
+                transition: "all 0.2s", padding: 0,
+              }} />
             ))}
           </div>
         )}
       </div>
 
-      {/* Contenu */}
-      <div className="px-5 py-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+      {/* Zone bleu nuit */}
+      <div style={{
+        flex: 1,
+        background: "#1a1f3a",
+        borderRadius: "0 80px 0 0",
+        marginTop: "-40px",
+        paddingTop: "50px",
+        paddingLeft: "18px",
+        paddingRight: "18px",
+        paddingBottom: "100px",
+        position: "relative",
+        zIndex: 1,
+      }}>
+        {/* Header article */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "10px" }}>
           <div>
-            <div className="text-indigo-400 text-xs font-semibold tracking-widest uppercase mb-1">
-              {article.ref}
-            </div>
-            <h1 className="text-2xl font-black">{article.nom}</h1>
+            <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: "#ff4d5a", marginBottom: "4px" }}>{article.ref}</p>
+            <h1 style={{ fontSize: "22px", fontWeight: 900, color: "white" }}>{article.nom}</h1>
           </div>
-          <div className="text-emerald-400 text-2xl font-black">
-            {article.prix ? `${article.prix}€` : "—"}
-          </div>
+          <p style={{ fontSize: "24px", fontWeight: 900, color: "#ff4d5a" }}>{article.prix ? `${article.prix}€` : "—"}</p>
         </div>
 
         {/* Badges */}
-        <div className="flex gap-2 flex-wrap mb-6">
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-500/20">
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
+          <span style={{ padding: "5px 12px", borderRadius: "50px", fontSize: "10px", fontWeight: 700, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
             📂 {dossiers.find(d => d.id === article.dossierId)?.nom || "Sans dossier"}
           </span>
           {article.fonctionnel && (
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-              article.fonctionnel === "Oui"
-                ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
-                : "bg-red-500/15 text-red-400 border-red-500/20"
-            }`}>
+            <span style={{
+              padding: "5px 12px", borderRadius: "50px", fontSize: "10px", fontWeight: 700,
+              background: article.fonctionnel === "Oui" ? "rgba(16,185,129,0.12)" : "rgba(255,77,90,0.12)",
+              color: article.fonctionnel === "Oui" ? "#10b981" : "#ff4d5a",
+              border: `1px solid ${article.fonctionnel === "Oui" ? "rgba(16,185,129,0.2)" : "rgba(255,77,90,0.2)"}`,
+            }}>
               {article.fonctionnel === "Oui" ? "✅ Fonctionnel" : "❌ Non fonctionnel"}
             </span>
           )}
         </div>
 
-        {/* Infos grille */}
+        {/* Infos ou formulaire */}
         {!editing ? (
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "16px" }}>
             {[
-              { label: "Type",     val: article.type },
               { label: "Stockage", val: article.stockage },
               { label: "Couleur",  val: article.couleur },
               { label: "Écran",    val: article.ecran },
@@ -274,14 +247,14 @@ export default function ArticlePage() {
               { label: "Batterie", val: article.batterie },
               { label: "Défaut",   val: article.defaut },
             ].filter(f => f.val).map(f => (
-              <div key={f.label} className="bg-white/5 rounded-2xl p-4">
-                <div className="text-white/30 text-xs mb-1">{f.label}</div>
-                <div className="text-sm font-semibold">{f.val}</div>
+              <div key={f.label} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "10px 12px" }}>
+                <p style={{ fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.25)", fontWeight: 600, marginBottom: "3px" }}>{f.label}</p>
+                <p style={{ fontSize: "12px", fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{f.val}</p>
               </div>
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-3 mb-6">
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
             {[
               { label: "Nom",      key: "nom" },
               { label: "Prix (€)", key: "prix", type: "number" },
@@ -293,25 +266,26 @@ export default function ArticlePage() {
               { label: "Défaut",   key: "defaut" },
             ].map(f => (
               <div key={f.key}>
-                <label className="text-xs text-white/40 uppercase tracking-wider mb-1 block">
-                  {f.label}
-                </label>
+                <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px" }}>{f.label}</p>
                 <input
                   type={f.type || "text"}
                   value={(form as any)[f.key] || ""}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                  className="w-full bg-white/8 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500"
+                  style={{
+                    width: "100%", background: "rgba(255,255,255,0.07)",
+                    border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px",
+                    padding: "12px 16px", color: "white", fontSize: "14px",
+                    outline: "none", fontFamily: "inherit",
+                  }}
                 />
               </div>
             ))}
             <div>
-              <label className="text-xs text-white/40 uppercase tracking-wider mb-1 block">
-                Fonctionnel
-              </label>
+              <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px" }}>Fonctionnel</p>
               <select
                 value={form.fonctionnel || "Oui"}
                 onChange={e => setForm(prev => ({ ...prev, fonctionnel: e.target.value }))}
-                className="w-full bg-white/8 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500"
+                style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "12px 16px", color: "white", fontSize: "14px", outline: "none", fontFamily: "inherit" }}
               >
                 <option value="Oui">Oui</option>
                 <option value="Non">Non</option>
@@ -321,72 +295,72 @@ export default function ArticlePage() {
         )}
 
         {/* Section photos */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-white/60">Photos</span>
-            <span className="text-xs text-white/30 bg-white/5 rounded-full px-3 py-1">
-              {images.length} / 10
-            </span>
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>Photos</p>
+            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.05)", borderRadius: "50px", padding: "3px 10px" }}>{images.length} / 10</span>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "6px" }}>
             {images.map((img: any, i: number) => (
-              <button
-                key={i}
-                onClick={() => { setPhotoIdx(i); setLightbox(true); }}
-                className={`w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 border-2 transition-all ${
-                  i === photoIdx ? "border-indigo-500" : "border-transparent"
-                }`}
-              >
-                <img src={img.url} alt="" className="w-full h-full object-cover" />
+              <button key={i} onClick={() => { setPhotoIdx(i); setLightbox(true); }} style={{
+                width: "64px", height: "64px", borderRadius: "16px", overflow: "hidden",
+                border: `2px solid ${i === photoIdx ? "#ff4d5a" : "transparent"}`,
+                flexShrink: 0, cursor: "pointer", padding: 0, background: "none",
+              }}>
+                <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </button>
             ))}
             {images.length < 10 && (
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="w-16 h-16 rounded-2xl border-2 border-dashed border-white/20 flex-shrink-0 flex flex-col items-center justify-center text-white/30 text-xs gap-1"
-              >
+              <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{
+                width: "64px", height: "64px", borderRadius: "16px",
+                border: "2px dashed rgba(255,255,255,0.2)", flexShrink: 0,
+                background: "none", cursor: "pointer", display: "flex",
+                flexDirection: "column", alignItems: "center", justifyContent: "center",
+                color: "rgba(255,255,255,0.3)", fontSize: "10px", gap: "3px",
+              }}>
                 {uploading ? (
-                  <div className="w-4 h-4 border-2 border-white/20 border-t-indigo-500 rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span className="text-xl">📷</span>
-                    <span>Photo</span>
-                  </>
-                )}
+                  <div style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                ) : <><span style={{ fontSize: "20px" }}>📷</span><span>Photo</span></>}
               </button>
             )}
           </div>
-          {/* Input fichier */}
-          <input
-  ref={fileRef}
-  type="file"
-  accept="image/*"
-  multiple
-  className="hidden"
-  onChange={handleUpload}
-/>
+          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
         </div>
 
         {/* Boutons */}
-        <div className="flex flex-col gap-3">
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {!editing ? (
             <>
-              <Button fullWidth onClick={() => setEditing(true)}>
-                ✏️ Modifier l'article
-              </Button>
-              <Button fullWidth variant="secondary" onClick={() => setShowMove(true)}>
-                📂 Déplacer vers un dossier
-              </Button>
+              <button onClick={() => setEditing(true)} style={{
+                width: "100%", padding: "16px", borderRadius: "16px",
+                background: "linear-gradient(135deg, #ff4d5a, #ff6b35)",
+                border: "none", color: "white", fontSize: "15px", fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+                boxShadow: "0 8px 20px rgba(255,77,90,0.35)",
+              }}>✏️ Modifier l'article</button>
+              <button onClick={() => setShowMove(true)} style={{
+                width: "100%", padding: "16px", borderRadius: "16px",
+                background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
+                color: "white", fontSize: "15px", fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+              }}>📂 Déplacer vers un dossier</button>
             </>
           ) : (
             <>
-              <Button fullWidth onClick={handleSave} loading={saving}>
-                💾 Enregistrer
-              </Button>
-              <Button fullWidth variant="secondary" onClick={() => setEditing(false)}>
-                Annuler
-              </Button>
+              <button onClick={handleSave} disabled={saving} style={{
+                width: "100%", padding: "16px", borderRadius: "16px",
+                background: "linear-gradient(135deg, #ff4d5a, #ff6b35)",
+                border: "none", color: "white", fontSize: "15px", fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+                boxShadow: "0 8px 20px rgba(255,77,90,0.35)",
+                opacity: saving ? 0.6 : 1,
+              }}>{saving ? "Enregistrement..." : "💾 Enregistrer"}</button>
+              <button onClick={() => setEditing(false)} style={{
+                width: "100%", padding: "16px", borderRadius: "16px",
+                background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
+                color: "white", fontSize: "15px", fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+              }}>Annuler</button>
             </>
           )}
         </div>
@@ -394,91 +368,62 @@ export default function ArticlePage() {
 
       {/* Modal déplacer */}
       {showMove && (
-        <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center"
-          onClick={() => setShowMove(false)}
-        >
-          <div
-            className="bg-[#1a1a24] rounded-t-3xl w-full max-w-md p-6 pb-12"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-6" />
-            <h2 className="text-xl font-black text-white mb-5 text-center">Déplacer vers…</h2>
-            <div className="flex flex-col gap-3">
-              {dossiers.map(d => (
-                <button
-                  key={d.id}
-                  onClick={() => handleMove(d.id)}
-                  className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
-                    d.id === article.dossierId
-                      ? "bg-indigo-500/15 border-indigo-500/30 text-indigo-400"
-                      : "bg-white/5 border-white/8 text-white"
-                  }`}
-                >
-                  <span className="text-2xl">📂</span>
-                  <span className="font-semibold">{d.nom}</span>
-                  {d.id === article.dossierId && (
-                    <span className="ml-auto text-xs">✓ Actuel</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lightbox plein écran */}
-      {lightbox && images.length > 0 && (
-        <div
-          className="fixed inset-0 bg-black z-50 flex items-center justify-center"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          <button
-            onClick={() => setLightbox(false)}
-            className="absolute top-14 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl z-10"
-          >
-            ✕
-          </button>
-
-          {images.length > 1 && (
-            <>
-              <button
-                onClick={prevPhoto}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-2xl z-10"
-              >
-                ‹
+        <div onClick={() => setShowMove(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+          backdropFilter: "blur(4px)", zIndex: 50, display: "flex",
+          alignItems: "flex-end", justifyContent: "center",
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "#1a1f3a", borderRadius: "28px 28px 0 0",
+            width: "100%", maxWidth: "480px", padding: "24px 20px 48px",
+          }}>
+            <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto 20px" }} />
+            <h2 style={{ fontSize: "20px", fontWeight: 900, color: "white", marginBottom: "16px", textAlign: "center" }}>Déplacer vers…</h2>
+            {dossiers.map(d => (
+              <button key={d.id} onClick={() => handleMove(d.id)} style={{
+                width: "100%", display: "flex", alignItems: "center", gap: "14px",
+                padding: "14px 16px", borderRadius: "16px", marginBottom: "8px",
+                background: d.id === article.dossierId ? "rgba(255,77,90,0.12)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${d.id === article.dossierId ? "rgba(255,77,90,0.3)" : "rgba(255,255,255,0.07)"}`,
+                color: d.id === article.dossierId ? "#ff4d5a" : "white",
+                cursor: "pointer", fontFamily: "inherit", fontSize: "14px", fontWeight: 600,
+              }}>
+                <span style={{ fontSize: "20px" }}>📂</span>
+                <span>{d.nom}</span>
+                {d.id === article.dossierId && <span style={{ marginLeft: "auto", fontSize: "11px" }}>✓ Actuel</span>}
               </button>
-              <button
-                onClick={nextPhoto}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-2xl z-10"
-              >
-                ›
-              </button>
-            </>
-          )}
-
-          <img
-            src={images[photoIdx]?.url}
-            alt=""
-            className="max-w-full max-h-full object-contain"
-          />
-
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
-            {images.map((_: any, i: number) => (
-              <button
-                key={i}
-                onClick={() => setPhotoIdx(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === photoIdx ? "w-5 bg-white" : "w-1.5 bg-white/40"
-                }`}
-              />
             ))}
           </div>
         </div>
       )}
 
-      <div className="h-24" />
+      {/* Lightbox */}
+      {lightbox && images.length > 0 && (
+        <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{
+          position: "fixed", inset: 0, background: "black", zIndex: 100,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <button onClick={() => setLightbox(false)} style={{
+            position: "absolute", top: "20px", right: "16px",
+            width: "36px", height: "36px", borderRadius: "50%",
+            background: "rgba(255,255,255,0.1)", border: "none",
+            color: "white", fontSize: "18px", cursor: "pointer",
+          }}>✕</button>
+          <img src={images[photoIdx]?.url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+          <div style={{ position: "absolute", bottom: "30px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
+            {images.map((_: any, i: number) => (
+              <button key={i} onClick={() => setPhotoIdx(i)} style={{
+                height: "5px", width: i === photoIdx ? "14px" : "5px",
+                borderRadius: "3px", border: "none", cursor: "pointer",
+                background: i === photoIdx ? "#ff4d5a" : "rgba(255,255,255,0.3)",
+                transition: "all 0.2s", padding: 0,
+              }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } input[type="file"].hidden { display: none; }`}</style>
     </div>
   );
 }
