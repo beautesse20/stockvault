@@ -56,7 +56,7 @@ export default function PinLogin() {
       {/* Zone blanche du haut */}
       <div style={{
         background: "#f7f8fc",
-        bborderRadius: "0 0 0 100px",
+        borderRadius: "0 0 0 100px",
 paddingBottom: "60px",
 paddingTop: "80px",
         display: "flex",
