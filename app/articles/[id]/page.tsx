@@ -356,14 +356,14 @@ export default function ArticlePage() {
               </button>
             )}
           </div>
-          {/* Input caméra directe */}
-          <<input
-  ref={fileRef}
-  type="file"
-  accept="image/*"
-  className="hidden"
-  onChange={handleUpload}
-/>
+          {/* Input fichier */}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUpload}
+          />
         </div>
 
         {/* Boutons */}
