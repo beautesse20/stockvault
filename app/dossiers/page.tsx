@@ -38,17 +38,8 @@ export default function DossiersPage() {
   };
 
   const totalArticles = dossiers.reduce((s, d) => s + (d.articleIds?.length || 0), 0);
-
-  const colors = [
-    "rgba(255,77,90,0.15)",
-    "rgba(255,140,66,0.15)",
-    "rgba(108,99,255,0.15)",
-    "rgba(16,185,129,0.15)",
-    "rgba(99,102,241,0.15)",
-    "rgba(236,72,153,0.15)",
-  ];
-
-  const emojis = ["🏠","📦","🚗","🏪","🏭","📫"];
+  const colors  = ["rgba(255,77,90,0.15)","rgba(255,140,66,0.15)","rgba(108,99,255,0.15)","rgba(16,185,129,0.15)","rgba(99,102,241,0.15)","rgba(236,72,153,0.15)"];
+  const emojis  = ["🏠","📦","🚗","🏪","🏭","📫"];
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -62,14 +53,10 @@ export default function DossiersPage() {
 
       {/* Zone blanche */}
       <div style={{
-        background: "#f7f8fc",
-        borderRadius: "0 0 0 100px",
-        paddingTop: "60px",
-        paddingBottom: "32px",
-        paddingLeft: "20px",
-        paddingRight: "20px",
-        position: "relative",
-        zIndex: 2,
+        background: "#f7f8fc", borderRadius: "0 0 0 60px",
+        paddingTop: "60px", paddingBottom: "80px",
+        paddingLeft: "20px", paddingRight: "20px",
+        position: "relative", zIndex: 2,
       }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
           <div>
@@ -78,42 +65,27 @@ export default function DossiersPage() {
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
             {admin && (
-              <button onClick={() => router.push("/admin")} style={{
-                width: "40px", height: "40px", borderRadius: "13px",
-                background: "white", border: "none", cursor: "pointer",
-                boxShadow: "0 3px 10px rgba(26,31,58,0.1)", fontSize: "18px",
-              }}>⚙️</button>
+              <button onClick={() => router.push("/admin")} style={{ width: "40px", height: "40px", borderRadius: "13px", background: "white", border: "none", cursor: "pointer", boxShadow: "0 3px 10px rgba(26,31,58,0.1)", fontSize: "18px" }}>⚙️</button>
             )}
-            <button onClick={() => { clearSession(); router.push("/"); }} style={{
-              width: "40px", height: "40px", borderRadius: "13px",
-              background: "linear-gradient(135deg, #ff4d5a, #ff6b35)",
-              border: "none", cursor: "pointer", fontSize: "16px",
-              fontWeight: 800, color: "white",
-              boxShadow: "0 6px 16px rgba(255,77,90,0.35)",
-            }}>
+            <button onClick={() => { clearSession(); router.push("/"); }} style={{ width: "40px", height: "40px", borderRadius: "13px", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", border: "none", cursor: "pointer", fontSize: "16px", fontWeight: 800, color: "white", boxShadow: "0 6px 16px rgba(255,77,90,0.35)" }}>
               {userName.charAt(0).toUpperCase()}
             </button>
           </div>
         </div>
 
-        {/* Hero card */}
-        <div style={{
-          background: "linear-gradient(135deg, #1a1f3a 0%, #2d1b69 60%, #1e2d6b 100%)",
-          borderRadius: "22px", padding: "18px", position: "relative",
-          overflow: "hidden", boxShadow: "0 12px 30px rgba(26,31,58,0.3)",
-        }}>
+        <div style={{ background: "linear-gradient(135deg, #1a1f3a 0%, #2d1b69 60%, #1e2d6b 100%)", borderRadius: "22px", padding: "18px", position: "relative", overflow: "hidden", boxShadow: "0 12px 30px rgba(26,31,58,0.3)" }}>
           <div style={{ position: "absolute", top: "-40px", right: "-40px", width: "130px", height: "130px", background: "radial-gradient(circle, rgba(255,77,90,0.3), transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: "-30px", left: "-20px", width: "110px", height: "110px", background: "radial-gradient(circle, rgba(108,99,255,0.25), transparent 70%)", pointerEvents: "none" }} />
           <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "12px", position: "relative" }}>Vue d'ensemble</p>
           <div style={{ display: "flex", marginBottom: "14px", position: "relative" }}>
             {[{ num: dossiers.length, lbl: "Dossiers" }, { num: totalArticles, lbl: "Articles" }].map((s, i) => (
-              <div
-  style={{ flex: 1, textAlign: "center", cursor: s.lbl === "Articles" ? "pointer" : "default" }}
-  onClick={() => s.lbl === "Articles" ? router.push("/articles") : undefined}
->
-  <div style={{ fontSize: "30px", fontWeight: 900, color: "white", lineHeight: 1 }}>{s.num}</div>
-  <div style={{ fontSize: "10px", color: s.lbl === "Articles" ? "#ff8c42" : "rgba(255,255,255,0.4)", marginTop: "4px" }}>{s.lbl}</div>
-</div>
+              <div key={i}
+                style={{ flex: 1, textAlign: "center", cursor: s.lbl === "Articles" ? "pointer" : "default" }}
+                onClick={() => s.lbl === "Articles" ? router.push("/articles") : undefined}
+              >
+                <div style={{ fontSize: "30px", fontWeight: 900, color: "white", lineHeight: 1 }}>{s.num}</div>
+                <div style={{ fontSize: "10px", color: s.lbl === "Articles" ? "#ff8c42" : "rgba(255,255,255,0.4)", marginTop: "4px" }}>{s.lbl}</div>
+              </div>
             ))}
           </div>
           <div style={{ position: "relative" }}>
@@ -128,23 +100,10 @@ export default function DossiersPage() {
       </div>
 
       {/* Zone bleu nuit */}
-      <div style={{
-        flex: 1,
-        background: "#1a1f3a",
-        borderRadius: "0 100px 0 0",
-        paddingTop: "40px",
-        paddingLeft: "20px",
-        paddingRight: "20px",
-        paddingBottom: "100px",
-        position: "relative",
-        zIndex: 1,
-      }}>
+      <div style={{ flex: 1, background: "#1a1f3a", borderRadius: "0 60px 0 0", paddingTop: "40px", paddingLeft: "20px", paddingRight: "20px", paddingBottom: "100px", position: "relative", zIndex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
           <p style={{ fontSize: "12px", fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "1px" }}>Dossiers récents</p>
-          <button onClick={() => router.push("/articles")} style={{
-            background: "none", border: "none", color: "#ff4d5a",
-            fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-          }}>Voir tout →</button>
+          <button onClick={() => router.push("/articles")} style={{ background: "none", border: "none", color: "#ff4d5a", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Voir tout →</button>
         </div>
 
         {dossiers.length === 0 && (
@@ -155,26 +114,13 @@ export default function DossiersPage() {
         )}
 
         {dossiers.map((d, i) => (
-          <div key={d.id} onClick={() => router.push(`/dossiers/${d.id}`)} style={{
-            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: "18px", padding: "14px 16px", display: "flex",
-            alignItems: "center", gap: "12px", marginBottom: "10px", cursor: "pointer",
-          }}>
-            <div style={{
-              width: "42px", height: "42px", borderRadius: "14px",
-              background: colors[i % colors.length],
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "20px", flexShrink: 0,
-            }}>{emojis[i % emojis.length]}</div>
+          <div key={d.id} onClick={() => router.push(`/dossiers/${d.id}`)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px", cursor: "pointer" }}>
+            <div style={{ width: "42px", height: "42px", borderRadius: "14px", background: colors[i % colors.length], display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>{emojis[i % emojis.length]}</div>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: "14px", fontWeight: 700, color: "white", marginBottom: "2px" }}>{d.nom}</p>
-              <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
-                {d.articleIds?.length || 0} article{(d.articleIds?.length || 0) > 1 ? "s" : ""}
-              </p>
+              <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{d.articleIds?.length || 0} article{(d.articleIds?.length || 0) > 1 ? "s" : ""}</p>
             </div>
-            <div style={{ padding: "4px 10px", borderRadius: "50px", fontSize: "10px", fontWeight: 700, background: "rgba(255,77,90,0.15)", color: "#ff4d5a" }}>
-              ›
-            </div>
+            <div style={{ padding: "4px 10px", borderRadius: "50px", fontSize: "10px", fontWeight: 700, background: "rgba(255,77,90,0.15)", color: "#ff4d5a" }}>›</div>
           </div>
         ))}
       </div>

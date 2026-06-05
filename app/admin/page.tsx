@@ -39,44 +39,25 @@ export default function AdminPage() {
     }
   };
 
-  const openCreateForm = () => {
-    setEditingUser(null);
-    setFormNom(""); setFormPin(""); setFormRole("Standard"); setFormDossiers([]);
-    setShowForm(true);
-  };
-
-  const openEditForm = (u: Utilisateur) => {
-    setEditingUser(u);
-    setFormNom(u.nom); setFormPin(u.pin); setFormRole(u.role);
-    setFormDossiers(u.dossierIds || []);
-    setShowForm(true);
-  };
+  const openCreateForm = () => { setEditingUser(null); setFormNom(""); setFormPin(""); setFormRole("Standard"); setFormDossiers([]); setShowForm(true); };
+  const openEditForm = (u: Utilisateur) => { setEditingUser(u); setFormNom(u.nom); setFormPin(u.pin); setFormRole(u.role); setFormDossiers(u.dossierIds || []); setShowForm(true); };
+  const handleDeleteUser    = async (id: string) => { if (!confirm("Supprimer ?")) return; await fetch(`/api/utilisateurs/${id}`, { method: "DELETE" }); await fetchData(); };
+  const handleDeleteDossier = async (id: string) => { if (!confirm("Supprimer ?")) return; await fetch(`/api/dossiers/${id}`, { method: "DELETE" }); await fetchData(); };
+  const toggleDossier = (id: string) => setFormDossiers(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
 
   const handleSaveUser = async () => {
     if (!formNom || formPin.length !== 4) return;
     setSavingUser(true);
     try {
       if (editingUser) {
-        await fetch(`/api/utilisateurs/${editingUser.id}`, {
-          method: "PATCH", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nom: formNom, pin: formPin, role: formRole, dossierIds: formDossiers }),
-        });
+        await fetch(`/api/utilisateurs/${editingUser.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nom: formNom, pin: formPin, role: formRole, dossierIds: formDossiers }) });
       } else {
-        await fetch("/api/utilisateurs", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nom: formNom, pin: formPin, role: formRole, dossierIds: formDossiers }),
-        });
+        await fetch("/api/utilisateurs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nom: formNom, pin: formPin, role: formRole, dossierIds: formDossiers }) });
       }
       setShowForm(false);
       await fetchData();
-    } finally {
-      setSavingUser(false);
-    }
+    } finally { setSavingUser(false); }
   };
-
-  const handleDeleteUser    = async (id: string) => { if (!confirm("Supprimer ?")) return; await fetch(`/api/utilisateurs/${id}`, { method: "DELETE" }); await fetchData(); };
-  const handleDeleteDossier = async (id: string) => { if (!confirm("Supprimer ?")) return; await fetch(`/api/dossiers/${id}`, { method: "DELETE" }); await fetchData(); };
-  const toggleDossier = (id: string) => setFormDossiers(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
 
   const handleCreateDossier = async () => {
     if (!newDossierNom) return;
@@ -106,28 +87,17 @@ export default function AdminPage() {
 
       {/* Zone blanche */}
       <div style={{
-        background: "#f7f8fc", borderRadius: "0 0 0 100px",
-        paddingTop: "60px", paddingBottom: "32px",
+        background: "#f7f8fc", borderRadius: "0 0 0 60px",
+        paddingTop: "60px", paddingBottom: "80px",
         paddingLeft: "20px", paddingRight: "20px",
         position: "relative", zIndex: 2,
       }}>
-        <button onClick={() => router.push("/dossiers")} style={{
-          background: "none", border: "none", color: "#ff4d5a",
-          fontSize: "14px", fontWeight: 600, cursor: "pointer",
-          fontFamily: "inherit", marginBottom: "12px",
-        }}>‹ Retour</button>
+        <button onClick={() => router.push("/dossiers")} style={{ background: "none", border: "none", color: "#ff4d5a", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: "12px" }}>‹ Retour</button>
         <h1 style={{ fontSize: "24px", fontWeight: 900, color: "#1a1f3a", marginBottom: "4px" }}>Paramètres</h1>
         <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "16px" }}>Gestion des accès et dossiers</p>
         <div style={{ display: "flex", gap: "8px" }}>
           {(["users", "dossiers"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              padding: "8px 18px", borderRadius: "50px", fontSize: "12px",
-              fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-              background: tab === t ? "#ff4d5a" : "white",
-              color: tab === t ? "white" : "#8892b0",
-              border: tab === t ? "none" : "1px solid #e2e5f0",
-              boxShadow: tab === t ? "0 4px 12px rgba(255,77,90,0.3)" : "0 2px 6px rgba(26,31,58,0.06)",
-            }}>
+            <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: "50px", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", background: tab === t ? "#ff4d5a" : "white", color: tab === t ? "white" : "#8892b0", border: tab === t ? "none" : "1px solid #e2e5f0", boxShadow: tab === t ? "0 4px 12px rgba(255,77,90,0.3)" : "0 2px 6px rgba(26,31,58,0.06)" }}>
               {t === "users" ? "👤 Utilisateurs" : "📂 Dossiers"}
             </button>
           ))}
@@ -135,13 +105,8 @@ export default function AdminPage() {
       </div>
 
       {/* Zone bleu nuit */}
-      <div style={{
-        flex: 1, background: "#1a1f3a", borderRadius: "0 100px 0 0",
-        paddingTop: "40px", paddingLeft: "20px", paddingRight: "20px",
-        paddingBottom: "100px", position: "relative", zIndex: 1,
-      }}>
+      <div style={{ flex: 1, background: "#1a1f3a", borderRadius: "0 60px 0 0", paddingTop: "40px", paddingLeft: "20px", paddingRight: "20px", paddingBottom: "100px", position: "relative", zIndex: 1 }}>
 
-        {/* TAB UTILISATEURS */}
         {tab === "users" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {utilisateurs.map(u => (
@@ -166,13 +131,10 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
-            <button onClick={openCreateForm} style={{ width: "100%", padding: "16px", borderRadius: "18px", border: "2px dashed rgba(255,255,255,0.15)", background: "none", color: "rgba(255,255,255,0.4)", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-              ＋ Nouvel utilisateur
-            </button>
+            <button onClick={openCreateForm} style={{ width: "100%", padding: "16px", borderRadius: "18px", border: "2px dashed rgba(255,255,255,0.15)", background: "none", color: "rgba(255,255,255,0.4)", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>＋ Nouvel utilisateur</button>
           </div>
         )}
 
-        {/* TAB DOSSIERS */}
         {tab === "dossiers" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {dossiers.map(d => (
@@ -237,9 +199,7 @@ export default function AdminPage() {
                 <button onClick={handleSaveUser} disabled={!formNom || formPin.length !== 4 || savingUser} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: !formNom || formPin.length !== 4 ? 0.5 : 1, boxShadow: "0 8px 20px rgba(255,77,90,0.3)" }}>
                   {savingUser ? "Enregistrement..." : editingUser ? "💾 Enregistrer" : "➕ Créer"}
                 </button>
-                <button onClick={() => setShowForm(false)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                  Annuler
-                </button>
+                <button onClick={() => setShowForm(false)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
               </div>
             </div>
           </div>
