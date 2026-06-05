@@ -89,12 +89,7 @@ export default function ArticlePage() {
     if (fileRef.current) fileRef.current.value = "";
   }
 };
-  } catch (e) {
-    console.error(e);
-  } finally {
-    setUploading(false);
-  }
-};
+ 
 
   const handleDeleteImage = async (index: number) => {
     if (!confirm("Supprimer cette photo ?")) return;
