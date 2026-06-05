@@ -42,8 +42,8 @@ export default function PinLogin() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#1a1f3a" }}>
       <div style={{
-        background: "#f7f8fc", borderRadius: "0 0 0 100px",
-        paddingTop: "80px", paddingBottom: "50px",
+        background: "#f7f8fc", borderRadius: "0 0 0 60px",
+        paddingTop: "80px", paddingBottom: "80px",
         paddingLeft: "24px", paddingRight: "24px",
         display: "flex", flexDirection: "column", alignItems: "center",
         position: "relative", zIndex: 2,
@@ -60,7 +60,7 @@ export default function PinLogin() {
       </div>
 
       <div style={{
-        flex: 1, background: "#1a1f3a", borderRadius: "0 100px 0 0",
+        flex: 1, background: "#1a1f3a", borderRadius: "0 60px 0 0",
         paddingTop: "50px", paddingBottom: "40px",
         paddingLeft: "24px", paddingRight: "24px",
         display: "flex", flexDirection: "column", alignItems: "center",
