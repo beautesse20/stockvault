@@ -398,30 +398,50 @@ export default function ArticlePage() {
       )}
 
       {/* Lightbox */}
-      {lightbox && images.length > 0 && (
-        <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{
-          position: "fixed", inset: 0, background: "black", zIndex: 100,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <button onClick={() => setLightbox(false)} style={{
-            position: "absolute", top: "20px", right: "16px",
-            width: "36px", height: "36px", borderRadius: "50%",
-            background: "rgba(255,255,255,0.1)", border: "none",
-            color: "white", fontSize: "18px", cursor: "pointer",
-          }}>✕</button>
-          <img src={images[photoIdx]?.url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
-          <div style={{ position: "absolute", bottom: "30px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
-            {images.map((_: any, i: number) => (
-              <button key={i} onClick={() => setPhotoIdx(i)} style={{
-                height: "5px", width: i === photoIdx ? "14px" : "5px",
-                borderRadius: "3px", border: "none", cursor: "pointer",
-                background: i === photoIdx ? "#ff4d5a" : "rgba(255,255,255,0.3)",
-                transition: "all 0.2s", padding: 0,
-              }} />
-            ))}
-          </div>
-        </div>
-      )}
+{lightbox && images.length > 0 && (
+  <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{
+    position: "fixed", inset: 0, background: "black", zIndex: 100,
+    display: "flex", alignItems: "center", justifyContent: "center",
+  }}>
+    {/* Fermer */}
+    <button onClick={() => setLightbox(false)} style={{
+      position: "absolute", top: "20px", right: "16px",
+      width: "36px", height: "36px", borderRadius: "50%",
+      background: "rgba(255,255,255,0.1)", border: "none",
+      color: "white", fontSize: "18px", cursor: "pointer",
+    }}>✕</button>
+
+    {/* Télécharger */}
+    
+      href={images[photoIdx]?.url}
+      download
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        position: "absolute", top: "20px", left: "16px",
+        width: "36px", height: "36px", borderRadius: "50%",
+        background: "rgba(255,255,255,0.1)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "18px", textDecoration: "none",
+      }}
+    >⬇️</a>
+
+    {/* Image */}
+    <img src={images[photoIdx]?.url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+
+    {/* Dots */}
+    <div style={{ position: "absolute", bottom: "30px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
+      {images.map((_: any, i: number) => (
+        <button key={i} onClick={() => setPhotoIdx(i)} style={{
+          height: "5px", width: i === photoIdx ? "14px" : "5px",
+          borderRadius: "3px", border: "none", cursor: "pointer",
+          background: i === photoIdx ? "#ff4d5a" : "rgba(255,255,255,0.3)",
+          transition: "all 0.2s", padding: 0,
+        }} />
+      ))}
+    </div>
+  </div>
+)}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } input[type="file"].hidden { display: none; }`}</style>
     </div>
