@@ -38,7 +38,6 @@ export default function DossierPage() {
   };
 
   const filtres = ["Tous", "Téléphone", "Divers", "Sans photo"];
-
   const articlesFiltres = articles.filter(a => {
     if (filtre === "Tous")       return true;
     if (filtre === "Sans photo") return !a.images || a.images.length === 0;
@@ -65,18 +64,19 @@ export default function DossierPage() {
       {/* Zone blanche */}
       <div style={{
         background: "#f7f8fc",
-        borderRadius: "0 0 0 80px",
+        borderRadius: "0 0 0 100px",
         paddingTop: "60px",
+        paddingBottom: "32px",
         paddingLeft: "20px",
         paddingRight: "20px",
-        paddingBottom: "24px",
         position: "relative",
         zIndex: 2,
       }}>
         <button onClick={() => router.push("/dossiers")} style={{
           background: "none", border: "none", color: "#ff4d5a",
           fontSize: "14px", fontWeight: 600, cursor: "pointer",
-          fontFamily: "inherit", marginBottom: "12px", display: "flex", alignItems: "center", gap: "4px",
+          fontFamily: "inherit", marginBottom: "12px",
+          display: "flex", alignItems: "center", gap: "4px",
         }}>‹ Retour</button>
 
         <h1 style={{ fontSize: "24px", fontWeight: 900, color: "#1a1f3a", marginBottom: "4px" }}>
@@ -86,7 +86,6 @@ export default function DossierPage() {
           {articles.length} article{articles.length > 1 ? "s" : ""}
         </p>
 
-        {/* Filtres */}
         <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
           {filtres.map(f => (
             <button key={f} onClick={() => setFiltre(f)} style={{
@@ -106,9 +105,8 @@ export default function DossierPage() {
       <div style={{
         flex: 1,
         background: "#1a1f3a",
-        borderRadius: "0 80px 0 0",
-        marginTop: "-40px",
-        paddingTop: "50px",
+        borderRadius: "0 100px 0 0",
+        paddingTop: "40px",
         paddingLeft: "16px",
         paddingRight: "16px",
         paddingBottom: "100px",
@@ -127,12 +125,8 @@ export default function DossierPage() {
             <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: "18px",
-              overflow: "hidden",
-              cursor: "pointer",
-              transition: "all 0.2s",
+              borderRadius: "18px", overflow: "hidden", cursor: "pointer",
             }}>
-              {/* Image */}
               <div style={{
                 height: "100px",
                 background: a.images && a.images.length > 0 ? "transparent" : gradients[i % gradients.length],
@@ -155,8 +149,6 @@ export default function DossierPage() {
                   </div>
                 )}
               </div>
-
-              {/* Infos */}
               <div style={{ padding: "10px" }}>
                 <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#ff4d5a", marginBottom: "3px" }}>{a.ref}</p>
                 <p style={{ fontSize: "12px", fontWeight: 700, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.nom}</p>

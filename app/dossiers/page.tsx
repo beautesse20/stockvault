@@ -63,15 +63,14 @@ export default function DossiersPage() {
       {/* Zone blanche */}
       <div style={{
         background: "#f7f8fc",
-        borderRadius: "0 0 0 80px",
+        borderRadius: "0 0 0 100px",
         paddingTop: "60px",
+        paddingBottom: "32px",
         paddingLeft: "20px",
         paddingRight: "20px",
-        paddingBottom: "28px",
         position: "relative",
         zIndex: 2,
       }}>
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
           <div>
             <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "3px" }}>Bonjour 👋</p>
@@ -100,31 +99,20 @@ export default function DossiersPage() {
         {/* Hero card */}
         <div style={{
           background: "linear-gradient(135deg, #1a1f3a 0%, #2d1b69 60%, #1e2d6b 100%)",
-          borderRadius: "22px",
-          padding: "18px",
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "0 12px 30px rgba(26,31,58,0.3)",
+          borderRadius: "22px", padding: "18px", position: "relative",
+          overflow: "hidden", boxShadow: "0 12px 30px rgba(26,31,58,0.3)",
         }}>
           <div style={{ position: "absolute", top: "-40px", right: "-40px", width: "130px", height: "130px", background: "radial-gradient(circle, rgba(255,77,90,0.3), transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "absolute", bottom: "-30px", left: "-20px", width: "110px", height: "110px", background: "radial-gradient(circle, rgba(108,99,255,0.25), transparent 70%)", pointerEvents: "none" }} />
-
-          <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "12px", position: "relative" }}>
-            Vue d'ensemble
-          </p>
-
+          <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "12px", position: "relative" }}>Vue d'ensemble</p>
           <div style={{ display: "flex", marginBottom: "14px", position: "relative" }}>
-            {[
-              { num: dossiers.length, lbl: "Dossiers" },
-              { num: totalArticles, lbl: "Articles" },
-            ].map((s, i) => (
+            {[{ num: dossiers.length, lbl: "Dossiers" }, { num: totalArticles, lbl: "Articles" }].map((s, i) => (
               <div key={i} style={{ flex: 1, textAlign: "center" }}>
                 <div style={{ fontSize: "30px", fontWeight: 900, color: "white", lineHeight: 1 }}>{s.num}</div>
                 <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>{s.lbl}</div>
               </div>
             ))}
           </div>
-
           <div style={{ position: "relative" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "rgba(255,255,255,0.35)", marginBottom: "6px" }}>
               <span>Photos complétées</span><span>60%</span>
@@ -140,9 +128,8 @@ export default function DossiersPage() {
       <div style={{
         flex: 1,
         background: "#1a1f3a",
-        borderRadius: "0 80px 0 0",
-        marginTop: "-40px",
-        paddingTop: "50px",
+        borderRadius: "0 100px 0 0",
+        paddingTop: "40px",
         paddingLeft: "20px",
         paddingRight: "20px",
         paddingBottom: "100px",
@@ -150,15 +137,11 @@ export default function DossiersPage() {
         zIndex: 1,
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-          <p style={{ fontSize: "12px", fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "1px" }}>
-            Dossiers récents
-          </p>
+          <p style={{ fontSize: "12px", fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "1px" }}>Dossiers récents</p>
           <button onClick={() => router.push("/articles")} style={{
             background: "none", border: "none", color: "#ff4d5a",
             fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-          }}>
-            Voir tout →
-          </button>
+          }}>Voir tout →</button>
         </div>
 
         {dossiers.length === 0 && (
@@ -170,36 +153,24 @@ export default function DossiersPage() {
 
         {dossiers.map((d, i) => (
           <div key={d.id} onClick={() => router.push(`/dossiers/${d.id}`)} style={{
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: "18px",
-            padding: "14px 16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            marginBottom: "10px",
-            cursor: "pointer",
-            transition: "all 0.2s",
+            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: "18px", padding: "14px 16px", display: "flex",
+            alignItems: "center", gap: "12px", marginBottom: "10px", cursor: "pointer",
           }}>
             <div style={{
               width: "42px", height: "42px", borderRadius: "14px",
               background: colors[i % colors.length],
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "20px", flexShrink: 0,
-            }}>
-              {emojis[i % emojis.length]}
-            </div>
+            }}>{emojis[i % emojis.length]}</div>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: "14px", fontWeight: 700, color: "white", marginBottom: "2px" }}>{d.nom}</p>
               <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
                 {d.articleIds?.length || 0} article{(d.articleIds?.length || 0) > 1 ? "s" : ""}
               </p>
             </div>
-            <div style={{
-              padding: "4px 10px", borderRadius: "50px", fontSize: "10px", fontWeight: 700,
-              background: "rgba(255,77,90,0.15)", color: "#ff4d5a",
-            }}>
-              {d.articleIds?.length || 0} photos
+            <div style={{ padding: "4px 10px", borderRadius: "50px", fontSize: "10px", fontWeight: 700, background: "rgba(255,77,90,0.15)", color: "#ff4d5a" }}>
+              ›
             </div>
           </div>
         ))}

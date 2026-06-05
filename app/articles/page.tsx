@@ -43,18 +43,13 @@ export default function ArticlesPage() {
   };
 
   const filtres = ["Tous", "Téléphone", "Divers", "Sans photo"];
-
   const articlesFiltres = articles
     .filter(a => {
       if (filtre === "Tous")       return true;
       if (filtre === "Sans photo") return !a.images || a.images.length === 0;
       return a.type === filtre;
     })
-    .filter(a => {
-      if (!search) return true;
-      return a.nom.toLowerCase().includes(search.toLowerCase()) ||
-             a.ref.toLowerCase().includes(search.toLowerCase());
-    });
+    .filter(a => !search || a.nom.toLowerCase().includes(search.toLowerCase()) || a.ref.toLowerCase().includes(search.toLowerCase()));
 
   const gradients = [
     "linear-gradient(135deg, rgba(255,77,90,0.2), rgba(255,140,66,0.08))",
@@ -76,11 +71,11 @@ export default function ArticlesPage() {
       {/* Zone blanche */}
       <div style={{
         background: "#f7f8fc",
-        borderRadius: "0 0 0 80px",
+        borderRadius: "0 0 0 100px",
         paddingTop: "60px",
+        paddingBottom: "32px",
         paddingLeft: "20px",
         paddingRight: "20px",
-        paddingBottom: "24px",
         position: "relative",
         zIndex: 2,
       }}>
@@ -97,7 +92,6 @@ export default function ArticlesPage() {
           {articles.length} article{articles.length > 1 ? "s" : ""}
         </p>
 
-        {/* Recherche */}
         <div style={{
           background: "white", borderRadius: "14px", padding: "12px 16px",
           display: "flex", alignItems: "center", gap: "10px",
@@ -105,24 +99,17 @@ export default function ArticlesPage() {
         }}>
           <span style={{ color: "#8892b0" }}>🔍</span>
           <input
-            type="text"
-            placeholder="Rechercher un article ou une réf..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              background: "none", border: "none", outline: "none",
-              fontSize: "13px", color: "#1a1f3a", flex: 1, fontFamily: "inherit",
-            }}
+            type="text" placeholder="Rechercher un article ou une réf..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            style={{ background: "none", border: "none", outline: "none", fontSize: "13px", color: "#1a1f3a", flex: 1, fontFamily: "inherit" }}
           />
         </div>
 
-        {/* Filtres */}
         <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
           {filtres.map(f => (
             <button key={f} onClick={() => setFiltre(f)} style={{
               padding: "7px 14px", borderRadius: "50px", fontSize: "11px",
-              fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer",
-              fontFamily: "inherit",
+              fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit",
               background: filtre === f ? "#ff4d5a" : "white",
               color: filtre === f ? "white" : "#8892b0",
               border: filtre === f ? "none" : "1px solid #e2e5f0",
@@ -136,9 +123,8 @@ export default function ArticlesPage() {
       <div style={{
         flex: 1,
         background: "#1a1f3a",
-        borderRadius: "0 80px 0 0",
-        marginTop: "-40px",
-        paddingTop: "50px",
+        borderRadius: "0 100px 0 0",
+        paddingTop: "40px",
         paddingLeft: "16px",
         paddingRight: "16px",
         paddingBottom: "100px",
