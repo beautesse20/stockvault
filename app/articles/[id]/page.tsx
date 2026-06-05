@@ -424,7 +424,8 @@ export default function ArticlePage() {
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: "18px", textDecoration: "none",
       }}
-    >⬇️</a>
+    >{"⬇️"}</a>
+
 
     {/* Image */}
     <img src={images[photoIdx]?.url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
