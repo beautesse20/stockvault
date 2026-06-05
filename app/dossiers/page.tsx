@@ -107,10 +107,13 @@ export default function DossiersPage() {
           <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "12px", position: "relative" }}>Vue d'ensemble</p>
           <div style={{ display: "flex", marginBottom: "14px", position: "relative" }}>
             {[{ num: dossiers.length, lbl: "Dossiers" }, { num: totalArticles, lbl: "Articles" }].map((s, i) => (
-              <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ fontSize: "30px", fontWeight: 900, color: "white", lineHeight: 1 }}>{s.num}</div>
-                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>{s.lbl}</div>
-              </div>
+              <div
+  style={{ flex: 1, textAlign: "center", cursor: s.lbl === "Articles" ? "pointer" : "default" }}
+  onClick={() => s.lbl === "Articles" ? router.push("/articles") : undefined}
+>
+  <div style={{ fontSize: "30px", fontWeight: 900, color: "white", lineHeight: 1 }}>{s.num}</div>
+  <div style={{ fontSize: "10px", color: s.lbl === "Articles" ? "#ff8c42" : "rgba(255,255,255,0.4)", marginTop: "4px" }}>{s.lbl}</div>
+</div>
             ))}
           </div>
           <div style={{ position: "relative" }}>
