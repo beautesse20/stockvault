@@ -413,9 +413,7 @@ export default function ArticlePage() {
 
     {/* Télécharger */}
     
-href={`/api/download?url=${encodeURIComponent(images[photoIdx]?.url)}&filename=photo-${photoIdx + 1}.jpg`}
-  style={{ position: "absolute", top: "20px", left: "16px", width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", textDecoration: "none" }}
->⬇️</a>
+<a href={`/api/download?url=${encodeURIComponent(images[photoIdx]?.url)}&filename=photo-${photoIdx + 1}.jpg`} style={{ position: "absolute", top: "20px", left: "16px", width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", textDecoration: "none" }}>⬇️</a>
 
 
     {/* Image */}
