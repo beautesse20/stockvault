@@ -51,22 +51,20 @@ export default function PinLogin() {
   const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#1a1f3a" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#1a1f3a" }}>
 
-      {/* Zone blanche du haut */}
+      {/* Zone blanche */}
       <div style={{
         background: "#f7f8fc",
         borderRadius: "0 0 0 100px",
-paddingBottom: "60px",
-paddingTop: "80px",
+        paddingTop: "80px",
+        paddingBottom: "60px",
+        paddingLeft: "24px",
+        paddingRight: "24px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        paddingTop: "60px",
-        paddingLeft: "24px",
-        paddingRight: "24px",
       }}>
-        {/* Illustration */}
         <div style={{
           width: "110px",
           height: "110px",
@@ -89,16 +87,16 @@ paddingTop: "80px",
         </p>
       </div>
 
-      {/* Zone bleu nuit du bas */}
+      {/* Zone bleu nuit */}
       <div style={{
         flex: 1,
         background: "#1a1f3a",
         borderRadius: "0 100px 0 0",
-marginTop: "-60px",
-paddingTop: "80px",
+        marginTop: "-60px",
+        paddingTop: "80px",
+        paddingBottom: "40px",
         paddingLeft: "24px",
         paddingRight: "24px",
-        paddingBottom: "40px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -110,7 +108,7 @@ paddingTop: "80px",
           Entrez votre code PIN
         </p>
 
-        {/* Dots PIN */}
+        {/* Dots */}
         <div style={{ display: "flex", gap: "16px", marginBottom: "28px" }}>
           {[0,1,2,3].map(i => (
             <div key={i} style={{
@@ -125,14 +123,12 @@ paddingTop: "80px",
           ))}
         </div>
 
-        {/* Erreur */}
         {error && (
           <p style={{ color: "#ff4d5a", fontSize: "13px", marginBottom: "16px", fontWeight: 600 }}>
             {error}
           </p>
         )}
 
-        {/* Loading */}
         {loading && (
           <div style={{
             width: "24px", height: "24px",
@@ -150,7 +146,7 @@ paddingTop: "80px",
           gridTemplateColumns: "repeat(3, 1fr)",
           gap: "12px",
           width: "100%",
-          maxWidth: "280px",
+          maxWidth: "300px",
         }}>
           {keys.map((key, i) => (
             <button
@@ -158,7 +154,7 @@ paddingTop: "80px",
               onClick={() => key === "⌫" ? handleDel() : key !== "" ? handlePress(key) : undefined}
               disabled={loading}
               style={{
-                height: "60px",
+                height: "64px",
                 borderRadius: "18px",
                 background: key === "" ? "transparent" : "rgba(255,255,255,0.07)",
                 border: key === "" ? "none" : "1px solid rgba(255,255,255,0.08)",
