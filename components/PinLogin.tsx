@@ -56,8 +56,9 @@ export default function PinLogin() {
       {/* Zone blanche du haut */}
       <div style={{
         background: "#f7f8fc",
-        borderRadius: "0 0 0 80px",
-        paddingBottom: "50px",
+        bborderRadius: "0 0 0 100px",
+paddingBottom: "60px",
+paddingTop: "80px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -92,9 +93,9 @@ export default function PinLogin() {
       <div style={{
         flex: 1,
         background: "#1a1f3a",
-        borderRadius: "0 80px 0 0",
-        marginTop: "-40px",
-        paddingTop: "50px",
+        borderRadius: "0 100px 0 0",
+marginTop: "-60px",
+paddingTop: "80px",
         paddingLeft: "24px",
         paddingRight: "24px",
         paddingBottom: "40px",
