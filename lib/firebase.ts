@@ -69,9 +69,9 @@ export async function getDossiers(): Promise<Dossier[]> {
   return dossierSnap.docs.map(d => {
     const count = articles.filter(a => a.dossierId === d.id).length;
     return {
-      id:          d.id,
-      nom:         (d.data() as any).nom || "",
-      articleIds:  Array(count).fill("x"),
+      id:         d.id,
+      nom:        (d.data() as any).nom || "",
+      articleIds: Array(count).fill("x"),
     } as Dossier;
   });
 }
