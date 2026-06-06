@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getArticle, updateArticle } from "@/lib/airtable";
+import { getArticle, updateArticle } from "@/lib/firebase";
 
 export async function GET(
   req: NextRequest,

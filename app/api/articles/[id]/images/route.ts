@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getArticle, updateArticle } from "@/lib/firebase";
 import { v2 as cloudinary } from "cloudinary";
-
-const AIRTABLE_TOKEN          = process.env.AIRTABLE_TOKEN!;
-const AIRTABLE_BASE_ID        = process.env.AIRTABLE_BASE_ID!;
-const AIRTABLE_TABLE_ARTICLES = process.env.AIRTABLE_TABLE_ARTICLES!;
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -26,55 +23,31 @@ export async function POST(
     const base64 = buffer.toString("base64");
     const dataUri = `data:${file.type};base64,${base64}`;
 
-    // 1) Upload vers Cloudinary
+    // Upload vers Cloudinary
     const uploadResult = await cloudinary.uploader.upload(dataUri, {
-      folder:           "stockvault",
-      resource_type:    "image",
-      quality:          "auto",
-      fetch_format:     "auto",
+      folder:        "stockvault",
+      resource_type: "image",
+      quality:       "auto",
+      fetch_format:  "auto",
     });
 
-    const publicUrl = uploadResult.secure_url;
-    console.log("Cloudinary URL:", publicUrl);
+    // Récupérer images existantes et ajouter la nouvelle
+    const article        = await getArticle(id);
+    const existingImages = article.images || [];
 
-    // 2) Récupérer images existantes dans Airtable
-    const resGet = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
-      { headers: { "Authorization": `Bearer ${AIRTABLE_TOKEN}` } }
-    );
-    const article  = await resGet.json();
-    const existing = (article.fields?.Images || []).map((img: any) => ({ id: img.id }));
-
-    // 3) Ajouter la nouvelle image via URL Cloudinary
-    const resPatch = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Authorization": `Bearer ${AIRTABLE_TOKEN}`,
-          "Content-Type":  "application/json",
-        },
-        body: JSON.stringify({
-          fields: {
-            Images: [
-              ...existing,
-              { url: publicUrl, filename: file.name }
-            ]
-          }
-        }),
-      }
-    );
-
-    const result = await resPatch.json();
-    console.log("Airtable status:", resPatch.status);
-
-    if (!resPatch.ok) {
-      return NextResponse.json({ error: result.error?.message || "Erreur Airtable" }, { status: 500 });
+    if (existingImages.length >= 10) {
+      return NextResponse.json({ error: "Maximum 10 photos atteint" }, { status: 400 });
     }
+
+    const newImages = [
+      ...existingImages,
+      { url: uploadResult.secure_url, filename: file.name },
+    ];
+
+    await updateArticle(id, { images: newImages });
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    console.log("Erreur upload:", e.message);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
@@ -88,33 +61,11 @@ export async function DELETE(
     const body       = await req.json();
     const imageIndex = body.imageIndex;
 
-    const resGet = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
-      { headers: { "Authorization": `Bearer ${AIRTABLE_TOKEN}` } }
-    );
-    const article = await resGet.json();
-    const images  = article.fields?.Images || [];
+    const article = await getArticle(id);
+    const images  = [...(article.images || [])];
     images.splice(imageIndex, 1);
 
-    const res = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ARTICLES}/${id}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Authorization": `Bearer ${AIRTABLE_TOKEN}`,
-          "Content-Type":  "application/json",
-        },
-        body: JSON.stringify({
-          fields: {
-            Images: images.map((img: any) => ({ id: img.id }))
-          }
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      return NextResponse.json({ error: "Erreur suppression" }, { status: 500 });
-    }
+    await updateArticle(id, { images });
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

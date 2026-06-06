@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUtilisateurs, createUtilisateur } from "@/lib/airtable";
+import { getUtilisateurs, createUtilisateur } from "@/lib/firebase";
 
 export async function GET() {
   try {

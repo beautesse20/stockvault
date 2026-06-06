@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteDossier } from "@/lib/airtable";
+import { deleteDossier } from "@/lib/firebase";
 
 export async function DELETE(
   req: NextRequest,

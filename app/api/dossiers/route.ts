@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDossiers, createDossier } from "@/lib/airtable";
+import { getDossiers, createDossier } from "@/lib/firebase";
 
 export async function GET() {
   try {
@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
   try {
     const { nom } = await req.json();
     if (!nom) return NextResponse.json({ error: "Nom manquant" }, { status: 400 });
-
     const dossier = await createDossier(nom);
     return NextResponse.json({ dossier });
   } catch (e) {
