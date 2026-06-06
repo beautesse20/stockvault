@@ -149,7 +149,8 @@ export default function ArticlePage() {
         )}
 
         {images.length > 0 && (
-          <button onClick={() => handleDeleteImage(photoIdx)} style={{ position: "absolute", bottom: "18px", right: "14px", width: "32px", height: "32px", borderRadius: "10px", background: "rgba(255,77,90,0.9)", border: "none", cursor: "pointer", fontSize: "14px", color: "white" }}>🗑</button>
+  <button onClick={() => handleDeleteImage(photoIdx)} style={{ position: "absolute", bottom: "18px", right: "14px", width: "64px", height: "64px", borderRadius: "18px", background: "rgba(255,77,90,0.9)", border: "none", cursor: "pointer", fontSize: "26px", color: "white" }}>🗑</button>
+
         )}
 
         {images.length > 1 && (
