@@ -59,8 +59,21 @@ export type Utilisateur = {
 
 // ── DOSSIERS ──
 export async function getDossiers(): Promise<Dossier[]> {
-  const snap = await getDocs(collection(db, "dossiers"));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Dossier));
+  const [dossierSnap, articleSnap] = await Promise.all([
+    getDocs(collection(db, "dossiers")),
+    getDocs(collection(db, "articles")),
+  ]);
+
+  const articles = articleSnap.docs.map(d => ({ id: d.id, ...d.data() } as Article));
+
+  return dossierSnap.docs.map(d => {
+    const count = articles.filter(a => a.dossierId === d.id).length;
+    return {
+      id:          d.id,
+      nom:         (d.data() as any).nom || "",
+      articleIds:  Array(count).fill("x"),
+    } as Dossier;
+  });
 }
 
 export async function createDossier(nom: string): Promise<Dossier> {
