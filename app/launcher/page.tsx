@@ -249,9 +249,10 @@ export default function LauncherPage() {
         {/* Clavier taille fixe x2 centré */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 144px)",
-          gridTemplateRows: "repeat(4, 112px)",
-          gap: "10px",
+          gridTemplateColumns: "repeat(3, 30vw)",
+gridTemplateRows: "repeat(4, 10vh)",
+gap: "8px",
+width: "92vw",
         }}>
           {keys.map((key, i) => (
             <button key={i}
