@@ -44,7 +44,6 @@ export default function LauncherPage() {
     const newPin = pin + val;
     setPin(newPin);
     setError("");
-
     if (newPin.length === 4) {
       setLoading(true);
       try {
@@ -55,9 +54,7 @@ export default function LauncherPage() {
           setPin("");
           if (found.role === "Standard") router.push("/dossiers");
         } else {
-          setTimeout(() => {
-            setPin(""); setError("Code incorrect, réessaie"); setLoading(false);
-          }, 400);
+          setTimeout(() => { setPin(""); setError("Code incorrect, réessaie"); setLoading(false); }, 400);
         }
       } catch {
         setPin(""); setError("Erreur de connexion"); setLoading(false);
@@ -84,7 +81,7 @@ export default function LauncherPage() {
   if (showApp) {
     return (
       <div style={{ position: "fixed", inset: 0, background: "#1a1f3a", zIndex: 100, display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 20px", background: "#1a1f3a", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 20px", paddingTop: "calc(16px + env(safe-area-inset-top))", background: "#1a1f3a", flexShrink: 0 }}>
           <button onClick={() => setShowApp(null)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: "18px", cursor: "pointer" }}>‹</button>
           <span style={{ color: "white", fontSize: "14px", fontWeight: 600 }}>PartStack</span>
         </div>
@@ -96,13 +93,20 @@ export default function LauncherPage() {
   // ── VUE APPS ADMIN ──
   if (user && user.role === "Admin") {
     return (
-      <div style={{ height: "100dvh", background: "#1a1f3a", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
+      <div style={{
+        height: "100dvh",
+        background: "#1a1f3a",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}>
         {/* Zone blanche 50% */}
         <div style={{
           background: "#f7f8fc",
           borderRadius: "0 0 0 60px",
-          flex: 1,
+          height: "50dvh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -110,6 +114,7 @@ export default function LauncherPage() {
           padding: "20px",
           position: "relative",
           zIndex: 2,
+          flexShrink: 0,
         }}>
           <p style={{ fontSize: "13px", color: "#8892b0", marginBottom: "8px" }}>Connecté en tant que</p>
           <h1 style={{ fontSize: "36px", fontWeight: 900, color: "#1a1f3a", marginBottom: "8px", textAlign: "center" }}>
@@ -128,13 +133,15 @@ export default function LauncherPage() {
         <div style={{
           background: "#1a1f3a",
           borderRadius: "0 60px 0 0",
-          flex: 1,
-          padding: "24px 20px",
+          height: "50dvh",
+          padding: "20px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap: "14px",
+          gap: "12px",
           zIndex: 1,
+          flexShrink: 0,
+          overflow: "hidden",
         }}>
           {APPS.map((app, i) => (
             <button key={i} onClick={() => handleApp(app)} style={{
@@ -149,19 +156,20 @@ export default function LauncherPage() {
               fontFamily: "inherit",
               flex: 1,
               minHeight: 0,
+              overflow: "hidden",
             }}>
               <div style={{
-                width: "64px", height: "64px", borderRadius: "20px",
+                width: "60px", height: "60px", borderRadius: "18px",
                 background: app.color,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "32px", flexShrink: 0,
+                fontSize: "28px", flexShrink: 0,
                 boxShadow: `0 8px 20px ${app.shadow}`,
               }}>{app.emoji}</div>
               <div style={{ flex: 1, textAlign: "left" }}>
                 <p style={{ fontSize: "20px", fontWeight: 800, color: "white", marginBottom: "4px" }}>{app.nom}</p>
                 <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>{app.description}</p>
               </div>
-              <div style={{ width: "36px", height: "36px", borderRadius: "12px", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "20px" }}>›</div>
+              <div style={{ width: "36px", height: "36px", borderRadius: "12px", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "20px", flexShrink: 0 }}>›</div>
             </button>
           ))}
         </div>
@@ -171,19 +179,27 @@ export default function LauncherPage() {
 
   // ── VUE LOGIN ──
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#1a1f3a", overflow: "hidden" }}>
-
+    <div style={{
+      height: "100dvh",
+      display: "flex",
+      flexDirection: "column",
+      background: "#1a1f3a",
+      overflow: "hidden",
+      paddingTop: "env(safe-area-inset-top)",
+      paddingBottom: "env(safe-area-inset-bottom)",
+    }}>
       {/* Zone blanche 50% */}
       <div style={{
         background: "#f7f8fc",
         borderRadius: "0 0 0 60px",
-        flex: 1,
+        height: "50dvh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         position: "relative",
         zIndex: 2,
+        flexShrink: 0,
       }}>
         <div style={{
           width: "90px", height: "90px", borderRadius: "28px",
@@ -200,18 +216,19 @@ export default function LauncherPage() {
       <div style={{
         background: "#1a1f3a",
         borderRadius: "0 60px 0 0",
-        flex: 1,
+        height: "50dvh",
         paddingLeft: "20px",
         paddingRight: "20px",
-        paddingTop: "20px",
-        paddingBottom: "20px",
+        paddingTop: "16px",
+        paddingBottom: "16px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         position: "relative",
         zIndex: 1,
-        gap: "12px",
+        gap: "10px",
         overflow: "hidden",
+        flexShrink: 0,
       }}>
         <div style={{ textAlign: "center" }}>
           <h2 style={{ fontSize: "18px", fontWeight: 800, color: "white", marginBottom: "2px" }}>Bon retour !</h2>
@@ -249,7 +266,7 @@ export default function LauncherPage() {
               onClick={() => key === "⌫" ? handleDel() : key !== "" ? handlePress(key) : undefined}
               disabled={loading}
               style={{
-                borderRadius: "16px",
+                borderRadius: "14px",
                 background: key === "" ? "transparent" : "rgba(255,255,255,0.07)",
                 border: key === "" ? "none" : "1px solid rgba(255,255,255,0.08)",
                 fontSize: "22px",
