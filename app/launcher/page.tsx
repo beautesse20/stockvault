@@ -53,20 +53,14 @@ export default function LauncherPage() {
           saveSession(found);
           setUser(found);
           setPin("");
-          if (found.role === "Standard") {
-            router.push("/dossiers");
-          }
+          if (found.role === "Standard") router.push("/dossiers");
         } else {
           setTimeout(() => {
-            setPin("");
-            setError("Code incorrect, réessaie");
-            setLoading(false);
+            setPin(""); setError("Code incorrect, réessaie"); setLoading(false);
           }, 400);
         }
       } catch {
-        setPin("");
-        setError("Erreur de connexion");
-        setLoading(false);
+        setPin(""); setError("Erreur de connexion"); setLoading(false);
       } finally {
         setLoading(false);
       }
@@ -77,11 +71,8 @@ export default function LauncherPage() {
   const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
 
   const handleApp = (app: typeof APPS[0]) => {
-    if (app.internal) {
-      router.push(app.url);
-    } else {
-      setShowApp(app.url);
-    }
+    if (app.internal) router.push(app.url);
+    else setShowApp(app.url);
   };
 
   const handleLogout = () => {
@@ -89,33 +80,29 @@ export default function LauncherPage() {
     localStorage.removeItem("stockvault_user");
   };
 
-  // ── VUE IFRAME (app externe) ──
+  // ── VUE IFRAME ──
   if (showApp) {
     return (
       <div style={{ position: "fixed", inset: 0, background: "#1a1f3a", zIndex: 100, display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 20px", background: "#1a1f3a", flexShrink: 0 }}>
-          <button onClick={() => setShowApp(null)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: "18px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+          <button onClick={() => setShowApp(null)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: "18px", cursor: "pointer" }}>‹</button>
           <span style={{ color: "white", fontSize: "14px", fontWeight: 600 }}>PartStack</span>
         </div>
-        <iframe
-          src={showApp}
-          style={{ flex: 1, border: "none", width: "100%", height: "100%" }}
-          allow="camera; microphone"
-        />
+        <iframe src={showApp} style={{ flex: 1, border: "none", width: "100%", height: "100%" }} allow="camera; microphone" />
       </div>
     );
   }
 
-  // ── VUE APPS (Admin connecté) ──
+  // ── VUE APPS ADMIN ──
   if (user && user.role === "Admin") {
     return (
-      <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", flexDirection: "column" }}>
+      <div style={{ height: "100dvh", background: "#1a1f3a", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-        {/* Zone blanche — 50% écran */}
+        {/* Zone blanche 50% */}
         <div style={{
           background: "#f7f8fc",
           borderRadius: "0 0 0 60px",
-          height: "50vh",
+          flex: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -125,61 +112,56 @@ export default function LauncherPage() {
           zIndex: 2,
         }}>
           <p style={{ fontSize: "13px", color: "#8892b0", marginBottom: "8px" }}>Connecté en tant que</p>
-          <h1 style={{ fontSize: "32px", fontWeight: 900, color: "#1a1f3a", marginBottom: "8px", textAlign: "center" }}>
+          <h1 style={{ fontSize: "36px", fontWeight: 900, color: "#1a1f3a", marginBottom: "8px", textAlign: "center" }}>
             {user.nom} 👋
           </h1>
-          <p style={{ fontSize: "14px", color: "#8892b0", marginBottom: "24px" }}>Choisissez une application</p>
+          <p style={{ fontSize: "15px", color: "#8892b0", marginBottom: "20px" }}>Choisissez une application</p>
           <button onClick={handleLogout} style={{
-            padding: "10px 20px", borderRadius: "50px",
+            padding: "10px 24px", borderRadius: "50px",
             border: "1px solid #e2e5f0", background: "white",
             color: "#8892b0", fontSize: "13px", fontWeight: 600,
             cursor: "pointer", fontFamily: "inherit",
-            boxShadow: "0 2px 6px rgba(26,31,58,0.06)",
-          }}>
-            Déconnexion
-          </button>
+          }}>Déconnexion</button>
         </div>
 
-        {/* Zone bleu nuit — 50% écran avec les apps */}
+        {/* Zone bleu nuit 50% */}
         <div style={{
           background: "#1a1f3a",
           borderRadius: "0 60px 0 0",
-          height: "50vh",
-          padding: "32px 20px",
-          position: "relative",
-          zIndex: 1,
+          flex: 1,
+          padding: "24px 20px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap: "16px",
+          gap: "14px",
+          zIndex: 1,
         }}>
           {APPS.map((app, i) => (
             <button key={i} onClick={() => handleApp(app)} style={{
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: "24px",
-              padding: "20px",
+              padding: "0 20px",
               display: "flex",
               alignItems: "center",
               gap: "18px",
               cursor: "pointer",
               fontFamily: "inherit",
               flex: 1,
+              minHeight: 0,
             }}>
               <div style={{
-                width: "70px", height: "70px", borderRadius: "22px",
+                width: "64px", height: "64px", borderRadius: "20px",
                 background: app.color,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "34px", flexShrink: 0,
+                fontSize: "32px", flexShrink: 0,
                 boxShadow: `0 8px 20px ${app.shadow}`,
-              }}>
-                {app.emoji}
-              </div>
+              }}>{app.emoji}</div>
               <div style={{ flex: 1, textAlign: "left" }}>
                 <p style={{ fontSize: "20px", fontWeight: 800, color: "white", marginBottom: "4px" }}>{app.nom}</p>
-                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>{app.description}</p>
+                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>{app.description}</p>
               </div>
-              <div style={{ width: "40px", height: "40px", borderRadius: "14px", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "20px" }}>›</div>
+              <div style={{ width: "36px", height: "36px", borderRadius: "12px", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "20px" }}>›</div>
             </button>
           ))}
         </div>
@@ -189,13 +171,13 @@ export default function LauncherPage() {
 
   // ── VUE LOGIN ──
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#1a1f3a" }}>
+    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#1a1f3a", overflow: "hidden" }}>
 
-      {/* Zone blanche — 50% écran */}
+      {/* Zone blanche 50% */}
       <div style={{
         background: "#f7f8fc",
         borderRadius: "0 0 0 60px",
-        height: "50vh",
+        flex: 1,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -214,64 +196,67 @@ export default function LauncherPage() {
         <p style={{ fontSize: "14px", color: "#8892b0" }}>Accès à vos applications</p>
       </div>
 
-      {/* Zone bleu nuit — 50% écran avec clavier */}
+      {/* Zone bleu nuit 50% */}
       <div style={{
         background: "#1a1f3a",
         borderRadius: "0 60px 0 0",
-        height: "50vh",
-        paddingLeft: "24px",
-        paddingRight: "24px",
+        flex: 1,
+        paddingLeft: "20px",
+        paddingRight: "20px",
+        paddingTop: "20px",
+        paddingBottom: "20px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
         position: "relative",
         zIndex: 1,
-        gap: "16px",
+        gap: "12px",
+        overflow: "hidden",
       }}>
         <div style={{ textAlign: "center" }}>
-          <h2 style={{ fontSize: "20px", fontWeight: 800, color: "white", marginBottom: "4px" }}>Bon retour !</h2>
-          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>Entrez votre code PIN</p>
+          <h2 style={{ fontSize: "18px", fontWeight: 800, color: "white", marginBottom: "2px" }}>Bon retour !</h2>
+          <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>Entrez votre code PIN</p>
         </div>
 
         {/* Dots */}
-        <div style={{ display: "flex", gap: "16px" }}>
+        <div style={{ display: "flex", gap: "14px" }}>
           {[0,1,2,3].map(i => (
             <div key={i} style={{
-              width: "14px", height: "14px", borderRadius: "50%",
+              width: "12px", height: "12px", borderRadius: "50%",
               background: i < pin.length ? "#ff4d5a" : "rgba(255,255,255,0.1)",
               border: `1.5px solid ${i < pin.length ? "#ff4d5a" : "rgba(255,255,255,0.15)"}`,
-              boxShadow: i < pin.length ? "0 0 14px rgba(255,77,90,0.7)" : "none",
+              boxShadow: i < pin.length ? "0 0 12px rgba(255,77,90,0.7)" : "none",
               transition: "all 0.2s",
             }} />
           ))}
         </div>
 
-        {error && <p style={{ color: "#ff4d5a", fontSize: "12px", fontWeight: 600, margin: 0 }}>{error}</p>}
-        {loading && <div style={{ width: "24px", height: "24px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />}
+        {error && <p style={{ color: "#ff4d5a", fontSize: "11px", fontWeight: 600, margin: 0 }}>{error}</p>}
+        {loading && <div style={{ width: "20px", height: "20px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />}
 
-        {/* Clavier — remplit tout l'espace restant */}
+        {/* Clavier */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "10px",
+          gridTemplateRows: "repeat(4, 1fr)",
+          gap: "8px",
           width: "100%",
           flex: 1,
+          minHeight: 0,
         }}>
           {keys.map((key, i) => (
             <button key={i}
               onClick={() => key === "⌫" ? handleDel() : key !== "" ? handlePress(key) : undefined}
               disabled={loading}
               style={{
-                borderRadius: "18px",
+                borderRadius: "16px",
                 background: key === "" ? "transparent" : "rgba(255,255,255,0.07)",
                 border: key === "" ? "none" : "1px solid rgba(255,255,255,0.08)",
-                fontSize: "24px",
+                fontSize: "22px",
                 fontWeight: 700,
                 color: key === "⌫" ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.85)",
                 cursor: key === "" ? "default" : "pointer",
                 fontFamily: "inherit",
-                transition: "all 0.15s",
               }}
             >{key}</button>
           ))}
