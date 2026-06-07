@@ -126,6 +126,31 @@ export default function DossiersPage() {
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* Bouton ajouter — Admin seulement */}
+{admin && (
+  <button
+    onClick={() => router.push("/ajouter")}
+    style={{
+      position: "fixed",
+      bottom: "32px",
+      left: "20px",
+      width: "52px",
+      height: "52px",
+      borderRadius: "50%",
+      background: "linear-gradient(135deg, #10b981, #059669)",
+      border: "none",
+      cursor: "pointer",
+      fontSize: "26px",
+      zIndex: 50,
+      boxShadow: "0 8px 24px rgba(16,185,129,0.45)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    ＋
+  </button>
+)}
     </div>
   );
 }

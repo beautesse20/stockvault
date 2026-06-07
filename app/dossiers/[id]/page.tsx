@@ -10,6 +10,7 @@ export default function DossierPage() {
   const [dossier, setDossier]   = useState<Dossier | null>(null);
   const [loading, setLoading]   = useState(true);
   const [filtre, setFiltre]     = useState("Tous");
+  const [isAdmin, setIsAdmin]   = useState(false);
   const router = useRouter();
   const params = useParams();
   const id     = params.id as string;
@@ -17,6 +18,7 @@ export default function DossierPage() {
   useEffect(() => {
     const user = getSession();
     if (!user) { router.push("/"); return; }
+    setIsAdmin(user.role === "Admin");
     fetchData();
   }, []);
 
@@ -64,7 +66,7 @@ export default function DossierPage() {
       {/* Zone blanche */}
       <div style={{
         background: "#f7f8fc", borderRadius: "0 0 0 60px",
-        paddingTop: "60px", paddingBottom: "80px",
+        paddingTop: "60px", paddingBottom: "32px",
         paddingLeft: "20px", paddingRight: "20px",
         position: "relative", zIndex: 2,
       }}>
@@ -111,6 +113,18 @@ export default function DossierPage() {
           ))}
         </div>
       </div>
+
+      {/* Bouton ajouter — Admin seulement */}
+      {isAdmin && (
+        <button onClick={() => router.push(`/ajouter?dossierId=${id}`)} style={{
+          position: "fixed", bottom: "32px", left: "20px",
+          width: "52px", height: "52px", borderRadius: "50%",
+          background: "linear-gradient(135deg, #10b981, #059669)",
+          border: "none", cursor: "pointer", fontSize: "26px", zIndex: 50,
+          boxShadow: "0 8px 24px rgba(16,185,129,0.45)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>＋</button>
+      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
