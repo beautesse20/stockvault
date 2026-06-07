@@ -94,6 +94,7 @@ export default function LauncherPage() {
   if (user && user.role === "Admin") {
     return (
       <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", flexDirection: "column" }}>
+
         {/* Zone blanche */}
         <div style={{
           background: "#f7f8fc",
@@ -122,44 +123,58 @@ export default function LauncherPage() {
           }}>Déconnexion</button>
         </div>
 
-        {/* Zone bleu nuit */}
+        {/* Zone bleu nuit avec les 2 apps */}
         <div style={{
           flex: 1,
           background: "#1a1f3a",
           borderRadius: "0 60px 0 0",
-          padding: "40px 20px",
+          padding: "30px 20px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap: "16px",
+          gap: "20px",
           zIndex: 1,
         }}>
           {APPS.map((app, i) => (
             <button key={i} onClick={() => handleApp(app)} style={{
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "24px",
-              padding: "40px 20px",
-
+              borderRadius: "28px",
+              padding: "28px 24px",
               display: "flex",
               alignItems: "center",
-              gap: "18px",
+              gap: "24px",
               cursor: "pointer",
               fontFamily: "inherit",
+              width: "100%",
             }}>
+              {/* Icône grande */}
               <div style={{
-                width: "128px", height: "128px", borderRadius: "36px",
-fontSize: "60px",
+                width: "100px",
+                height: "100px",
+                borderRadius: "28px",
                 background: app.color,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "30px", flexShrink: 0,
-                boxShadow: `0 8px 20px ${app.shadow}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "48px",
+                flexShrink: 0,
+                boxShadow: `0 10px 28px ${app.shadow}`,
               }}>{app.emoji}</div>
+
+              {/* Texte */}
               <div style={{ flex: 1, textAlign: "left" }}>
-                <p style={{ fontSize: "20px", fontWeight: 800, color: "white", marginBottom: "4px" }}>{app.nom}</p>
-                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>{app.description}</p>
+                <p style={{ fontSize: "24px", fontWeight: 800, color: "white", marginBottom: "6px" }}>{app.nom}</p>
+                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.4)" }}>{app.description}</p>
               </div>
-              <div style={{ width: "36px", height: "36px", borderRadius: "12px", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.4)", fontSize: "20px", flexShrink: 0 }}>›</div>
+
+              {/* Flèche */}
+              <div style={{
+                width: "44px", height: "44px", borderRadius: "14px",
+                background: "rgba(255,255,255,0.08)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "rgba(255,255,255,0.4)", fontSize: "24px", flexShrink: 0,
+              }}>›</div>
             </button>
           ))}
         </div>
@@ -171,7 +186,7 @@ fontSize: "60px",
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#1a1f3a" }}>
 
-      {/* Zone blanche — même style que StockVault */}
+      {/* Zone blanche */}
       <div style={{
         background: "#f7f8fc",
         borderRadius: "0 0 0 60px",
@@ -231,12 +246,12 @@ fontSize: "60px",
         {error && <p style={{ color: "#ff4d5a", fontSize: "12px", fontWeight: 600, margin: 0 }}>{error}</p>}
         {loading && <div style={{ width: "20px", height: "20px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />}
 
-        {/* Clavier taille fixe centré */}
+        {/* Clavier taille fixe x2 centré */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(3, 144px)",
-gridTemplateRows: "repeat(4, 112px)",
-gap: "10px",
+          gridTemplateRows: "repeat(4, 112px)",
+          gap: "10px",
         }}>
           {keys.map((key, i) => (
             <button key={i}
@@ -246,7 +261,7 @@ gap: "10px",
                 borderRadius: "16px",
                 background: key === "" ? "transparent" : "rgba(255,255,255,0.07)",
                 border: key === "" ? "none" : "1px solid rgba(255,255,255,0.08)",
-                fontSize: "22px",
+                fontSize: "28px",
                 fontWeight: 700,
                 color: key === "⌫" ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.85)",
                 cursor: key === "" ? "default" : "pointer",
