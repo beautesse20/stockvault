@@ -7,7 +7,8 @@ export default function HomeButton() {
   const router   = useRouter();
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname === "/dossiers" || pathname === "/launcher") return null;
+  // Cacher uniquement sur le launcher
+  if (pathname === "/launcher") return null;
 
   const handleHome = () => {
     const user = getSession();
