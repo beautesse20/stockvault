@@ -84,7 +84,7 @@ export default function PinLogin() {
         {error && <p style={{ color: "#ff4d5a", fontSize: "13px", marginBottom: "16px", fontWeight: 600 }}>{error}</p>}
         {loading && <div style={{ width: "24px", height: "24px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", marginBottom: "16px", animation: "spin 0.8s linear infinite" }} />}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", width: "100%", maxWidth: "300px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 144px)", gridTemplateRows: "repeat(4, 112px)", gap: "10px" }}>
           {keys.map((key, i) => (
             <button key={i}
               onClick={() => key === "⌫" ? handleDel() : key !== "" ? handlePress(key) : undefined}
