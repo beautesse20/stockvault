@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
+import { getSession } from "@/lib/auth";
 
 export default function HomeButton() {
   const router   = useRouter();
@@ -8,9 +9,18 @@ export default function HomeButton() {
 
   if (pathname === "/" || pathname === "/dossiers" || pathname === "/launcher") return null;
 
+  const handleHome = () => {
+    const user = getSession();
+    if (user?.role === "Admin") {
+      router.push("/launcher");
+    } else {
+      router.push("/dossiers");
+    }
+  };
+
   return (
     <button
-      onClick={() => router.push("/dossiers")}
+      onClick={handleHome}
       style={{
         position: "fixed",
         bottom: "32px",

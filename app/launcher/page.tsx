@@ -139,7 +139,8 @@ export default function LauncherPage() {
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: "24px",
-              padding: "22px 20px",
+              padding: "40px 20px",
+
               display: "flex",
               alignItems: "center",
               gap: "18px",
@@ -147,7 +148,8 @@ export default function LauncherPage() {
               fontFamily: "inherit",
             }}>
               <div style={{
-                width: "64px", height: "64px", borderRadius: "20px",
+                width: "128px", height: "128px", borderRadius: "36px",
+fontSize: "60px",
                 background: app.color,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "30px", flexShrink: 0,
