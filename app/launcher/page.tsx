@@ -81,7 +81,7 @@ export default function LauncherPage() {
   if (showApp) {
     return (
       <div style={{ position: "fixed", inset: 0, background: "#1a1f3a", zIndex: 100, display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 20px", paddingTop: "calc(16px + env(safe-area-inset-top))", background: "#1a1f3a", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 20px", background: "#1a1f3a", flexShrink: 0 }}>
           <button onClick={() => setShowApp(null)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: "18px", cursor: "pointer" }}>‹</button>
           <span style={{ color: "white", fontSize: "14px", fontWeight: 600 }}>PartStack</span>
         </div>
@@ -93,28 +93,21 @@ export default function LauncherPage() {
   // ── VUE APPS ADMIN ──
   if (user && user.role === "Admin") {
     return (
-      <div style={{
-        height: "100dvh",
-        background: "#1a1f3a",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
-      }}>
-        {/* Zone blanche 50% */}
+      <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", flexDirection: "column" }}>
+        {/* Zone blanche */}
         <div style={{
           background: "#f7f8fc",
           borderRadius: "0 0 0 60px",
-          height: "50dvh",
+          paddingTop: "60px",
+          paddingBottom: "80px",
+          paddingLeft: "20px",
+          paddingRight: "20px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "20px",
           position: "relative",
           zIndex: 2,
-          flexShrink: 0,
         }}>
           <p style={{ fontSize: "13px", color: "#8892b0", marginBottom: "8px" }}>Connecté en tant que</p>
           <h1 style={{ fontSize: "36px", fontWeight: 900, color: "#1a1f3a", marginBottom: "8px", textAlign: "center" }}>
@@ -129,40 +122,35 @@ export default function LauncherPage() {
           }}>Déconnexion</button>
         </div>
 
-        {/* Zone bleu nuit 50% */}
+        {/* Zone bleu nuit */}
         <div style={{
+          flex: 1,
           background: "#1a1f3a",
           borderRadius: "0 60px 0 0",
-          height: "50dvh",
-          padding: "20px",
+          padding: "40px 20px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap: "12px",
+          gap: "16px",
           zIndex: 1,
-          flexShrink: 0,
-          overflow: "hidden",
         }}>
           {APPS.map((app, i) => (
             <button key={i} onClick={() => handleApp(app)} style={{
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: "24px",
-              padding: "0 20px",
+              padding: "22px 20px",
               display: "flex",
               alignItems: "center",
               gap: "18px",
               cursor: "pointer",
               fontFamily: "inherit",
-              flex: 1,
-              minHeight: 0,
-              overflow: "hidden",
             }}>
               <div style={{
-                width: "60px", height: "60px", borderRadius: "18px",
+                width: "64px", height: "64px", borderRadius: "20px",
                 background: app.color,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "28px", flexShrink: 0,
+                fontSize: "30px", flexShrink: 0,
                 boxShadow: `0 8px 20px ${app.shadow}`,
               }}>{app.emoji}</div>
               <div style={{ flex: 1, textAlign: "left" }}>
@@ -179,27 +167,21 @@ export default function LauncherPage() {
 
   // ── VUE LOGIN ──
   return (
-    <div style={{
-      height: "100dvh",
-      display: "flex",
-      flexDirection: "column",
-      background: "#1a1f3a",
-      overflow: "hidden",
-      paddingTop: "env(safe-area-inset-top)",
-      paddingBottom: "env(safe-area-inset-bottom)",
-    }}>
-      {/* Zone blanche 50% */}
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#1a1f3a" }}>
+
+      {/* Zone blanche — même style que StockVault */}
       <div style={{
         background: "#f7f8fc",
         borderRadius: "0 0 0 60px",
-        height: "50dvh",
+        paddingTop: "80px",
+        paddingBottom: "60px",
+        paddingLeft: "24px",
+        paddingRight: "24px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
         position: "relative",
         zIndex: 2,
-        flexShrink: 0,
       }}>
         <div style={{
           width: "90px", height: "90px", borderRadius: "28px",
@@ -212,34 +194,30 @@ export default function LauncherPage() {
         <p style={{ fontSize: "14px", color: "#8892b0" }}>Accès à vos applications</p>
       </div>
 
-      {/* Zone bleu nuit 50% */}
+      {/* Zone bleu nuit — clavier centré */}
       <div style={{
+        flex: 1,
         background: "#1a1f3a",
         borderRadius: "0 60px 0 0",
-        height: "50dvh",
-        paddingLeft: "20px",
-        paddingRight: "20px",
-        paddingTop: "16px",
-        paddingBottom: "16px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
         position: "relative",
         zIndex: 1,
-        gap: "10px",
-        overflow: "hidden",
-        flexShrink: 0,
+        gap: "16px",
       }}>
         <div style={{ textAlign: "center" }}>
-          <h2 style={{ fontSize: "18px", fontWeight: 800, color: "white", marginBottom: "2px" }}>Bon retour !</h2>
-          <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>Entrez votre code PIN</p>
+          <h2 style={{ fontSize: "20px", fontWeight: 800, color: "white", marginBottom: "4px" }}>Bon retour !</h2>
+          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>Entrez votre code PIN</p>
         </div>
 
         {/* Dots */}
         <div style={{ display: "flex", gap: "14px" }}>
           {[0,1,2,3].map(i => (
             <div key={i} style={{
-              width: "12px", height: "12px", borderRadius: "50%",
+              width: "13px", height: "13px", borderRadius: "50%",
               background: i < pin.length ? "#ff4d5a" : "rgba(255,255,255,0.1)",
               border: `1.5px solid ${i < pin.length ? "#ff4d5a" : "rgba(255,255,255,0.15)"}`,
               boxShadow: i < pin.length ? "0 0 12px rgba(255,77,90,0.7)" : "none",
@@ -248,25 +226,22 @@ export default function LauncherPage() {
           ))}
         </div>
 
-        {error && <p style={{ color: "#ff4d5a", fontSize: "11px", fontWeight: 600, margin: 0 }}>{error}</p>}
+        {error && <p style={{ color: "#ff4d5a", fontSize: "12px", fontWeight: 600, margin: 0 }}>{error}</p>}
         {loading && <div style={{ width: "20px", height: "20px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />}
 
-        {/* Clavier */}
+        {/* Clavier taille fixe centré */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gridTemplateRows: "repeat(4, 1fr)",
-          gap: "8px",
-          width: "100%",
-          flex: 1,
-          minHeight: 0,
+          gridTemplateColumns: "repeat(3, 72px)",
+          gridTemplateRows: "repeat(4, 56px)",
+          gap: "10px",
         }}>
           {keys.map((key, i) => (
             <button key={i}
               onClick={() => key === "⌫" ? handleDel() : key !== "" ? handlePress(key) : undefined}
               disabled={loading}
               style={{
-                borderRadius: "14px",
+                borderRadius: "16px",
                 background: key === "" ? "transparent" : "rgba(255,255,255,0.07)",
                 border: key === "" ? "none" : "1px solid rgba(255,255,255,0.08)",
                 fontSize: "22px",

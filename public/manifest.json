@@ -1,0 +1,19 @@
+{
+  "name": "Launcher",
+  "short_name": "Launcher",
+  "description": "Accès à vos applications",
+  "start_url": "/launcher",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1a1f3a",
+  "theme_color": "#ff4d5a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/launcher-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
