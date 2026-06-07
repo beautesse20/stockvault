@@ -6,7 +6,7 @@ export default function HomeButton() {
   const router   = useRouter();
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname === "/dossiers") return null;
+  if (pathname === "/" || pathname === "/dossiers" || pathname === "/launcher") return null;
 
   return (
     <button
