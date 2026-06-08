@@ -21,23 +21,29 @@ export default function DossiersPage() {
   }, []);
 
   const fetchDossiers = async (user: any) => {
-    try {
-      const res  = await fetch("/api/dossiers");
-      const data = await res.json();
-      const all: Dossier[] = data.dossiers || [];
-      if (user.role === "Admin") {
-        setDossiers(all);
-      } else {
-        setDossiers(all.filter(d => user.dossierIds?.includes(d.id)));
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const res  = await fetch("/api/dossiers");
+    const data = await res.json();
+    const all: Dossier[] = data.dossiers || [];
 
-  const totalArticles = dossiers.reduce((s, d) => s + (d.articleIds?.length || 0), 0);
+    // Total articles — toujours compter tout
+    const resTotal  = await fetch("/api/articles");
+    const dataTotal = await resTotal.json();
+    setTotalArticles((dataTotal.articles || []).length);
+
+    if (user.role === "Admin") {
+      setDossiers(all);
+    } else {
+      setDossiers(all.filter(d => user.dossierIds?.includes(d.id)));
+    }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const [totalArticles, setTotalArticles] = useState(0);
   const colors  = ["rgba(255,77,90,0.15)","rgba(255,140,66,0.15)","rgba(108,99,255,0.15)","rgba(16,185,129,0.15)","rgba(99,102,241,0.15)","rgba(236,72,153,0.15)"];
   const emojis  = ["🏠","📦","🚗","🏪","🏭","📫"];
 
