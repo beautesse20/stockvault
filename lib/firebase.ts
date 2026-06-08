@@ -108,15 +108,19 @@ export async function getArticle(id: string): Promise<Article> {
 }
 
 export async function updateArticle(id: string, fields: Partial<Article>): Promise<void> {
-  const clean: any = {};
-  Object.keys(fields).forEach(k => {
-    if ((fields as any)[k] !== undefined) clean[k] = (fields as any)[k];
+  const clean: any = { ...fields, updatedAt: new Date().toISOString() };
+  Object.keys(clean).forEach(k => {
+    if (clean[k] === undefined) delete clean[k];
   });
   await updateDoc(doc(db, "articles", id), clean);
 }
 
 export async function createArticle(fields: Partial<Article>): Promise<string> {
-  const ref = await addDoc(collection(db, "articles"), fields);
+  const ref = await addDoc(collection(db, "articles"), {
+    ...fields,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
   return ref.id;
 }
 
