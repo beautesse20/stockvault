@@ -33,11 +33,17 @@ export default function DossiersPage() {
         const dataTotal = await resTotal.json();
         setTotalArticles((dataTotal.articles || []).length);
       } else {
-        const filtered = all.filter(d => user.dossierIds?.includes(d.id));
-        setDossiers(filtered);
-        const total = filtered.reduce((s, d) => s + (d.articleIds?.length || 0), 0);
-        setTotalArticles(total);
-      }
+  const filtered = all.filter(d => user.dossierIds?.includes(d.id));
+  setDossiers(filtered);
+  // Compter uniquement les articles dans ses dossiers
+  const resTotal  = await fetch("/api/articles");
+  const dataTotal = await resTotal.json();
+  const allArticles = dataTotal.articles || [];
+  const total = allArticles.filter((a: any) =>
+    user.dossierIds?.includes(a.dossierId)
+  ).length;
+  setTotalArticles(total);
+}
     } catch (e) {
       console.error(e);
     } finally {
@@ -45,7 +51,6 @@ export default function DossiersPage() {
     }
   };
 
-const [totalArticles, setTotalArticles] = useState(0);
   const colors  = ["rgba(255,77,90,0.15)","rgba(255,140,66,0.15)","rgba(108,99,255,0.15)","rgba(16,185,129,0.15)","rgba(99,102,241,0.15)","rgba(236,72,153,0.15)"];
   const emojis  = ["🏠","📦","🚗","🏪","🏭","📫"];
 
