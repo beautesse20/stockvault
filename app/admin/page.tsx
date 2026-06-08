@@ -29,7 +29,7 @@ export default function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [resU, resD] = await Promise.all([fetch("/api/utilisateurs"), fetch("/api/dossiers")]);
+      const [resU, resD] = await Promise.all([fetch("/api/utilisateurs", { cache: "no-store" }), fetch("/api/dossiers", { cache: "no-store" })]);
       const dataU = await resU.json();
       const dataD = await resD.json();
       setUtilisateurs(dataU.utilisateurs || []);

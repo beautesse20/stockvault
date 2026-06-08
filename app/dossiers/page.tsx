@@ -23,20 +23,20 @@ export default function DossiersPage() {
 
   const fetchDossiers = async (user: any) => {
     try {
-      const res  = await fetch("/api/dossiers");
+      const res  = await fetch("/api/dossiers", { cache: "no-store" });
       const data = await res.json();
       const all: Dossier[] = data.dossiers || [];
 
       if (user.role === "Admin") {
         setDossiers(all);
-        const resTotal  = await fetch("/api/articles");
+        const resTotal  = await fetch("/api/articles", { cache: "no-store" });
         const dataTotal = await resTotal.json();
         setTotalArticles((dataTotal.articles || []).length);
       } else {
   const filtered = all.filter(d => user.dossierIds?.includes(d.id));
   setDossiers(filtered);
   // Compter uniquement les articles dans ses dossiers
-  const resTotal  = await fetch("/api/articles");
+  const resTotal  = await fetch("/api/articles", { cache: "no-store" });
   const dataTotal = await resTotal.json();
   const allArticles = dataTotal.articles || [];
   const total = allArticles.filter((a: any) =>

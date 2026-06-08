@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
+import { thumb } from "@/lib/img";
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -22,8 +23,8 @@ export default function ArticlesPage() {
   const fetchData = async (user: any) => {
     try {
       const [resA, resD] = await Promise.all([
-        fetch("/api/articles"),
-        fetch("/api/dossiers"),
+        fetch("/api/articles", { cache: "no-store" }),
+        fetch("/api/dossiers", { cache: "no-store" }),
       ]);
       const dataA = await resA.json();
       const dataD = await resD.json();
@@ -103,7 +104,7 @@ export default function ArticlesPage() {
               <div style={{ height: "100px", background: a.images && a.images.length > 0 ? "transparent" : gradients[i % gradients.length], display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px", position: "relative" }}>
                 {a.images && a.images.length > 0 ? (
                   <>
-                    <img src={a.images[0].url} alt={a.nom} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={thumb(a.images[0].url)} alt={a.nom} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     <div style={{ position: "absolute", top: "6px", right: "6px", background: "rgba(0,0,0,0.5)", borderRadius: "8px", padding: "2px 7px", fontSize: "9px", color: "rgba(255,255,255,0.8)" }}>{a.images.length} 📷</div>
                   </>
                 ) : (

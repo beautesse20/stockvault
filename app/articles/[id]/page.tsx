@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
+import { thumb, medium } from "@/lib/img";
 
 export default function ArticlePage() {
   const [article, setArticle]     = useState<Article | null>(null);
@@ -36,8 +37,8 @@ export default function ArticlePage() {
     try {
       const currentUser = user || userSession;
       const [resA, resD] = await Promise.all([
-        fetch(`/api/articles/${id}`),
-        fetch("/api/dossiers"),
+        fetch(`/api/articles/${id}`, { cache: "no-store" }),
+        fetch("/api/dossiers", { cache: "no-store" }),
       ]);
       const dataA = await resA.json();
       const dataD = await resD.json();
@@ -113,6 +114,18 @@ export default function ArticlePage() {
     await fetchData();
   };
 
+  const handleDeleteArticle = async () => {
+    if (!confirm("Supprimer définitivement cet article ?")) return;
+    setSaving(true);
+    try {
+      await fetch(`/api/articles/${id}`, { method: "DELETE" });
+      router.push(article?.dossierId ? `/dossiers/${article.dossierId}` : "/dossiers");
+    } catch (e) {
+      console.error(e);
+      setSaving(false);
+    }
+  };
+
   const nextPhoto = () => { if (article?.images) setPhotoIdx(i => (i + 1) % article.images!.length); };
   const prevPhoto = () => { if (article?.images) setPhotoIdx(i => (i - 1 + article.images!.length) % article.images!.length); };
   const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
@@ -146,7 +159,7 @@ export default function ArticlePage() {
         onTouchEnd={handleTouchEnd}
       >
         {images.length > 0 ? (
-          <img src={images[photoIdx]?.url} alt={article.nom} style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }} onClick={() => setLightbox(true)} />
+          <img src={medium(images[photoIdx]?.url)} alt={article.nom} style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }} onClick={() => setLightbox(true)} />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: "rgba(26,31,58,0.2)" }}>
             <span>📷</span>
@@ -249,7 +262,7 @@ export default function ArticlePage() {
           <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "6px" }}>
             {images.map((img: any, i: number) => (
               <button key={i} onClick={() => { setPhotoIdx(i); setLightbox(true); }} style={{ width: "64px", height: "64px", borderRadius: "16px", overflow: "hidden", border: `2px solid ${i === photoIdx ? "#ff4d5a" : "transparent"}`, flexShrink: 0, cursor: "pointer", padding: 0, background: "none" }}>
-                <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={thumb(img.url)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </button>
             ))}
             {/* Upload photo — Admin seulement */}
@@ -272,6 +285,10 @@ export default function ArticlePage() {
               )}
               {/* Déplacer — tous les utilisateurs, mais dossiers filtrés */}
               <button onClick={() => setShowMove(true)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>📂 Déplacer vers un dossier</button>
+              {/* Supprimer l'article — Admin seulement */}
+              {isAdmin && (
+                <button onClick={handleDeleteArticle} disabled={saving} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,77,90,0.12)", border: "1px solid rgba(255,77,90,0.3)", color: "#ff4d5a", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>🗑 Supprimer l'article</button>
+              )}
             </>
           ) : (
             <>
@@ -305,9 +322,9 @@ export default function ArticlePage() {
       {/* Lightbox */}
       {lightbox && images.length > 0 && (
         <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{ position: "fixed", inset: 0, background: "black", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <button onClick={() => setLightbox(false)} style={{ position: "absolute", top: "20px", right: "16px", width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: "18px", cursor: "pointer" }}>✕</button>
-          <a href={`/api/download?url=${encodeURIComponent(images[photoIdx]?.url)}&filename=photo-${photoIdx + 1}.jpg`} style={{ position: "absolute", top: "20px", left: "16px", width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", textDecoration: "none" }}>⬇️</a>
-          <img src={images[photoIdx]?.url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+          <button onClick={() => setLightbox(false)} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", color: "white", fontSize: "20px", cursor: "pointer", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+          <a href={`/api/download?url=${encodeURIComponent(images[photoIdx]?.url)}&filename=photo-${photoIdx + 1}.jpg`} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", textDecoration: "none", zIndex: 2 }}>⬇️</a>
+          <img src={medium(images[photoIdx]?.url)} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
           <div style={{ position: "absolute", bottom: "30px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
             {images.map((_: any, i: number) => (
               <button key={i} onClick={() => setPhotoIdx(i)} style={{ height: "5px", width: i === photoIdx ? "14px" : "5px", borderRadius: "3px", border: "none", cursor: "pointer", background: i === photoIdx ? "#ff4d5a" : "rgba(255,255,255,0.3)", transition: "all 0.2s", padding: 0 }} />
