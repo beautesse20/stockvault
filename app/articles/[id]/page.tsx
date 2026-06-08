@@ -16,6 +16,8 @@ export default function ArticlePage() {
   const [photoIdx, setPhotoIdx]   = useState(0);
   const [lightbox, setLightbox]   = useState(false);
   const [form, setForm]           = useState<Partial<Article>>({});
+  const [isAdmin, setIsAdmin]     = useState(false);
+  const [userSession, setUserSession] = useState<any>(null);
   const fileRef                   = useRef<HTMLInputElement>(null);
   const touchStartX               = useRef(0);
   const router                    = useRouter();
@@ -25,11 +27,14 @@ export default function ArticlePage() {
   useEffect(() => {
     const user = getSession();
     if (!user) { router.push("/"); return; }
-    fetchData();
+    setIsAdmin(user.role === "Admin");
+    setUserSession(user);
+    fetchData(user);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (user?: any) => {
     try {
+      const currentUser = user || userSession;
       const [resA, resD] = await Promise.all([
         fetch(`/api/articles/${id}`),
         fetch("/api/dossiers"),
@@ -38,7 +43,14 @@ export default function ArticlePage() {
       const dataD = await resD.json();
       setArticle(dataA.article);
       setForm(dataA.article);
-      setDossiers(dataD.dossiers || []);
+
+      // Filtrer les dossiers selon le rôle
+      const allDossiers: Dossier[] = dataD.dossiers || [];
+      if (currentUser?.role === "Admin") {
+        setDossiers(allDossiers);
+      } else {
+        setDossiers(allDossiers.filter(d => currentUser?.dossierIds?.includes(d.id)));
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -148,9 +160,9 @@ export default function ArticlePage() {
           <div style={{ position: "absolute", top: "18px", right: "14px", background: "white", borderRadius: "10px", padding: "5px 10px", fontSize: "10px", fontWeight: 700, color: "#1a1f3a", boxShadow: "0 2px 10px rgba(26,31,58,0.12)" }}>{images.length} / 10 📷</div>
         )}
 
+        {/* Bouton supprimer photo — Admin seulement */}
         {images.length > 0 && (
-  <button onClick={() => handleDeleteImage(photoIdx)} style={{ position: "absolute", bottom: "18px", right: "14px", width: "64px", height: "64px", borderRadius: "18px", background: "rgba(255,77,90,0.9)", border: "none", cursor: "pointer", fontSize: "26px", color: "white" }}>🗑</button>
-
+          <button onClick={() => handleDeleteImage(photoIdx)} style={{ position: "absolute", bottom: "18px", right: "14px", width: "64px", height: "64px", borderRadius: "18px", background: "rgba(255,77,90,0.9)", border: "none", cursor: "pointer", fontSize: "26px", color: "white" }}>🗑</button>
         )}
 
         {images.length > 1 && (
@@ -184,6 +196,7 @@ export default function ArticlePage() {
           )}
         </div>
 
+        {/* Infos article */}
         {!editing ? (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "16px" }}>
             {[
@@ -239,6 +252,7 @@ export default function ArticlePage() {
                 <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </button>
             ))}
+            {/* Upload photo — Admin seulement */}
             {images.length < 10 && (
               <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ width: "64px", height: "64px", borderRadius: "16px", border: "2px dashed rgba(255,255,255,0.2)", flexShrink: 0, background: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontSize: "10px", gap: "3px" }}>
                 {uploading ? <div style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <><span style={{ fontSize: "20px" }}>📷</span><span>Photo</span></>}
@@ -248,11 +262,15 @@ export default function ArticlePage() {
           <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleUpload} />
         </div>
 
-        {/* Boutons */}
+        {/* Boutons — selon rôle */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {!editing ? (
             <>
-              <button onClick={() => setEditing(true)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(255,77,90,0.35)" }}>✏️ Modifier l'article</button>
+              {/* Modifier — Admin seulement */}
+              {isAdmin && (
+                <button onClick={() => setEditing(true)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(255,77,90,0.35)" }}>✏️ Modifier l'article</button>
+              )}
+              {/* Déplacer — tous les utilisateurs, mais dossiers filtrés */}
               <button onClick={() => setShowMove(true)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>📂 Déplacer vers un dossier</button>
             </>
           ) : (
@@ -270,6 +288,9 @@ export default function ArticlePage() {
           <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f3a", borderRadius: "28px 28px 0 0", width: "100%", maxWidth: "480px", padding: "24px 20px 48px" }}>
             <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto 20px" }} />
             <h2 style={{ fontSize: "20px", fontWeight: 900, color: "white", marginBottom: "16px", textAlign: "center" }}>Déplacer vers…</h2>
+            {dossiers.length === 0 && (
+              <p style={{ textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: "13px" }}>Aucun dossier disponible</p>
+            )}
             {dossiers.map(d => (
               <button key={d.id} onClick={() => handleMove(d.id)} style={{ width: "100%", display: "flex", alignItems: "center", gap: "14px", padding: "14px 16px", borderRadius: "16px", marginBottom: "8px", background: d.id === article.dossierId ? "rgba(255,77,90,0.12)" : "rgba(255,255,255,0.05)", border: `1px solid ${d.id === article.dossierId ? "rgba(255,77,90,0.3)" : "rgba(255,255,255,0.07)"}`, color: d.id === article.dossierId ? "#ff4d5a" : "white", cursor: "pointer", fontFamily: "inherit", fontSize: "14px", fontWeight: 600 }}>
                 <span style={{ fontSize: "20px" }}>📂</span>
