@@ -2,7 +2,7 @@
 // Utilise un "upload preset non signé" (le nom est public par nature, sans risque
 // pour le contenu existant). Renvoie l'URL sécurisée de l'image.
 
-const CLOUD_NAME    = "dv9hn2eff";
+const CLOUD_NAME    = "di6qnlcgy";
 const UPLOAD_PRESET = "sjfvdj53";
 
 export async function uploadToCloudinary(file: File): Promise<string> {
