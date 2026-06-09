@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { createArticle, getDossiers } from "@/lib/firebase";
+import { compressImage } from "@/lib/compress";
 import { useEffect } from "react";
 
 type Dossier = { id: string; nom: string };
@@ -56,8 +57,9 @@ export default function AjouterPage() {
     setUploading(true);
     try {
       for (const file of toUpload) {
+        const compressed = await compressImage(file);
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", compressed);
         const res  = await fetch("/api/upload-temp", { method: "POST", body: formData });
         const data = await res.json();
         if (data.url) setImages(prev => [...prev, { url: data.url, filename: file.name }]);

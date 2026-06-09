@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
 import { thumb, medium } from "@/lib/img";
+import { compressImage } from "@/lib/compress";
 
 export default function ArticlePage() {
   const [article, setArticle]     = useState<Article | null>(null);
@@ -82,8 +83,9 @@ export default function ArticlePage() {
     setUploading(true);
     try {
       for (const file of toUpload) {
+        const compressed = await compressImage(file);
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", compressed);
         await fetch(`/api/articles/${id}/images`, { method: "POST", body: formData });
       }
       await fetchData();
