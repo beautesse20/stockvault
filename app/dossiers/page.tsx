@@ -78,6 +78,9 @@ export default function DossiersPage() {
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
             {admin && (
+              <button onClick={() => router.push("/photos")} title="Photos en masse" style={{ width: "40px", height: "40px", borderRadius: "13px", background: "white", border: "none", cursor: "pointer", boxShadow: "0 3px 10px rgba(26,31,58,0.1)", fontSize: "18px" }}>📷</button>
+            )}
+            {admin && (
               <button onClick={() => router.push("/admin")} style={{ width: "40px", height: "40px", borderRadius: "13px", background: "white", border: "none", cursor: "pointer", boxShadow: "0 3px 10px rgba(26,31,58,0.1)", fontSize: "18px" }}>⚙️</button>
             )}
             <button onClick={() => { clearSession(); router.push("/"); }} style={{ width: "40px", height: "40px", borderRadius: "13px", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", border: "none", cursor: "pointer", fontSize: "16px", fontWeight: 800, color: "white", boxShadow: "0 6px 16px rgba(255,77,90,0.35)" }}>

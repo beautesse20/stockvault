@@ -10,6 +10,7 @@ import {
   deleteDoc,
   query,
   where,
+  arrayUnion,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -113,6 +114,17 @@ export async function updateArticle(id: string, fields: Partial<Article>): Promi
     if (clean[k] === undefined) delete clean[k];
   });
   await updateDoc(doc(db, "articles", id), clean);
+}
+
+// Ajoute une image SANS écraser les autres (atomique, sûr en parallèle)
+export async function appendArticleImage(
+  id: string,
+  image: { url: string; filename: string }
+): Promise<void> {
+  await updateDoc(doc(db, "articles", id), {
+    images:    arrayUnion(image),
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export async function createArticle(fields: Partial<Article>): Promise<string> {
