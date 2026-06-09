@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
+import { assignArticlesToDossier } from "@/lib/firebase";
 import { thumb } from "@/lib/img";
 
 export default function DossierPage() {
@@ -12,6 +13,16 @@ export default function DossierPage() {
   const [loading, setLoading]   = useState(true);
   const [filtre, setFiltre]     = useState("Tous");
   const [isAdmin, setIsAdmin]   = useState(false);
+
+  // Sélecteur d'ajout en masse
+  const [showPicker, setShowPicker]   = useState(false);
+  const [allArticles, setAllArticles] = useState<Article[]>([]);
+  const [selected, setSelected]       = useState<Set<string>>(new Set());
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [pickerFilter, setPickerFilter] = useState<"none" | "all">("none");
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [assigning, setAssigning]     = useState(false);
+
   const router = useRouter();
   const params = useParams();
   const id     = params.id as string;
@@ -39,6 +50,56 @@ export default function DossierPage() {
       setLoading(false);
     }
   };
+
+  const openPicker = async () => {
+    setShowPicker(true);
+    setSelected(new Set());
+    setPickerSearch("");
+    setPickerFilter("none");
+    setPickerLoading(true);
+    try {
+      const res  = await fetch("/api/articles", { cache: "no-store" });
+      const data = await res.json();
+      setAllArticles(data.articles || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const toggleSelect = (articleId: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(articleId) ? next.delete(articleId) : next.add(articleId);
+      return next;
+    });
+  };
+
+  const handleAssign = async () => {
+    if (selected.size === 0) return;
+    setAssigning(true);
+    try {
+      await assignArticlesToDossier([...selected], id);
+      setShowPicker(false);
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors de l'assignation");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  // Articles proposés dans le sélecteur (jamais ceux déjà dans CE dossier)
+  const pickerArticles = allArticles
+    .filter(a => a.dossierId !== id)
+    .filter(a => pickerFilter === "all" ? true : (!a.dossierId || a.dossierId === ""))
+    .filter(a => {
+      if (!pickerSearch.trim()) return true;
+      const q = pickerSearch.toLowerCase();
+      return (a.ref || "").toLowerCase().includes(q) || (a.nom || "").toLowerCase().includes(q);
+    });
 
   const filtres = ["Tous", "Téléphone", "Divers", "Sans photo"];
   const articlesFiltres = articles.filter(a => {
@@ -79,6 +140,12 @@ export default function DossierPage() {
             <button key={f} onClick={() => setFiltre(f)} style={{ padding: "7px 14px", borderRadius: "50px", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", background: filtre === f ? "#ff4d5a" : "white", color: filtre === f ? "white" : "#8892b0", border: filtre === f ? "none" : "1px solid #e2e5f0", boxShadow: filtre === f ? "0 4px 12px rgba(255,77,90,0.3)" : "0 2px 6px rgba(26,31,58,0.06)" }}>{f}</button>
           ))}
         </div>
+
+        {isAdmin && (
+          <button onClick={openPicker} style={{ marginTop: "16px", width: "100%", padding: "13px", borderRadius: "14px", border: "1.5px solid #1a1f3a", background: "#1a1f3a", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            <span style={{ fontSize: "18px" }}>＋</span> Ajouter des articles à ce dossier
+          </button>
+        )}
       </div>
 
       {/* Zone bleu nuit */}
@@ -125,6 +192,69 @@ export default function DossierPage() {
           boxShadow: "0 8px 24px rgba(16,185,129,0.45)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>＋</button>
+      )}
+
+      {/* Sélecteur d'ajout en masse */}
+      {showPicker && (
+        <div onClick={() => !assigning && setShowPicker(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 60, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f3a", borderRadius: "28px 28px 0 0", width: "100%", maxWidth: "480px", height: "85vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+            <div style={{ padding: "20px 20px 14px", flexShrink: 0 }}>
+              <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto 18px" }} />
+              <h2 style={{ fontSize: "19px", fontWeight: 900, color: "white", marginBottom: "14px", textAlign: "center" }}>Ajouter à « {dossier?.nom} »</h2>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "9px", background: "rgba(255,255,255,0.07)", borderRadius: "12px", padding: "10px 14px", marginBottom: "10px" }}>
+                <span style={{ fontSize: "15px", color: "rgba(255,255,255,0.4)" }}>🔍</span>
+                <input value={pickerSearch} onChange={e => setPickerSearch(e.target.value)} placeholder="Chercher par réf ou nom…" style={{ flex: 1, border: "none", outline: "none", background: "none", color: "white", fontSize: "14px", fontFamily: "inherit" }} />
+              </div>
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                {([["none", "Sans dossier"], ["all", "Tous"]] as const).map(([val, lbl]) => (
+                  <button key={val} onClick={() => setPickerFilter(val)} style={{ flex: 1, padding: "9px", borderRadius: "10px", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 700, fontFamily: "inherit", background: pickerFilter === val ? "#ff4d5a" : "rgba(255,255,255,0.07)", color: pickerFilter === val ? "white" : "rgba(255,255,255,0.5)" }}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto", padding: "0 20px", minHeight: 0 }}>
+              {pickerLoading ? (
+                <div style={{ display: "flex", justifyContent: "center", paddingTop: "40px" }}>
+                  <div style={{ width: "28px", height: "28px", border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                </div>
+              ) : pickerArticles.length === 0 ? (
+                <p style={{ textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: "13px", paddingTop: "40px" }}>
+                  {pickerFilter === "none" ? "Aucun article sans dossier." : "Aucun article."}
+                </p>
+              ) : (
+                pickerArticles.map(a => {
+                  const isSel = selected.has(a.id);
+                  return (
+                    <button key={a.id} onClick={() => toggleSelect(a.id)} style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", borderRadius: "14px", marginBottom: "8px", background: isSel ? "rgba(255,77,90,0.15)" : "rgba(255,255,255,0.04)", border: `1px solid ${isSel ? "rgba(255,77,90,0.4)" : "rgba(255,255,255,0.07)"}`, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+                      <div style={{ width: "24px", height: "24px", borderRadius: "7px", flexShrink: 0, border: `2px solid ${isSel ? "#ff4d5a" : "rgba(255,255,255,0.25)"}`, background: isSel ? "#ff4d5a" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "13px" }}>{isSel ? "✓" : ""}</div>
+                      <div style={{ width: "42px", height: "42px", borderRadius: "10px", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
+                        {a.images && a.images.length > 0 ? <img src={thumb(a.images[0].url)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "📷"}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#ff4d5a", marginBottom: "2px" }}>{a.ref}</p>
+                        <p style={{ fontSize: "13px", fontWeight: 700, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.nom}</p>
+                      </div>
+                      {a.dossierId && a.dossierId !== "" && (
+                        <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>déjà rangé</span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div style={{ padding: "14px 20px calc(20px + env(safe-area-inset-bottom))", flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <button onClick={handleAssign} disabled={selected.size === 0 || assigning} style={{ width: "100%", padding: "16px", borderRadius: "16px", border: "none", cursor: selected.size === 0 ? "default" : "pointer", fontSize: "15px", fontWeight: 700, fontFamily: "inherit", color: "white", background: selected.size === 0 ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #ff4d5a, #ff6b35)", opacity: assigning ? 0.6 : 1 }}>
+                {assigning ? "Assignation…" : selected.size === 0 ? "Sélectionne des articles" : `Assigner ${selected.size} article${selected.size > 1 ? "s" : ""}`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

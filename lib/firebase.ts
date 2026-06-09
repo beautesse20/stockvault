@@ -11,6 +11,7 @@ import {
   query,
   where,
   arrayUnion,
+  writeBatch,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -125,6 +126,18 @@ export async function appendArticleImage(
     images:    arrayUnion(image),
     updatedAt: new Date().toISOString(),
   });
+}
+
+// Assigne plusieurs articles à un dossier en une écriture groupée (atomique).
+// Ne touche PAS updatedAt : le dossier est une organisation propre à l'app,
+// pas une colonne du Sheet — inutile de déclencher une resynchro vers le Sheet.
+export async function assignArticlesToDossier(ids: string[], dossierId: string): Promise<void> {
+  for (let i = 0; i < ids.length; i += 500) {
+    const chunk = ids.slice(i, i + 500);
+    const batch = writeBatch(db);
+    chunk.forEach(id => batch.update(doc(db, "articles", id), { dossierId }));
+    await batch.commit();
+  }
 }
 
 export async function createArticle(fields: Partial<Article>): Promise<string> {
