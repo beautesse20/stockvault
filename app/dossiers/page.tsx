@@ -51,6 +51,25 @@ export default function DossiersPage() {
     }
   };
 
+  const handleRename = async (d: Dossier) => {
+    const saisie = window.prompt("Nouveau nom du dossier :", d.nom);
+    if (saisie === null) return;            // annulé
+    const nom = saisie.trim();
+    if (!nom || nom === d.nom) return;      // vide ou inchangé
+    try {
+      const res = await fetch(`/api/dossiers/${d.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nom }),
+      });
+      if (!res.ok) throw new Error("échec");
+      setDossiers(prev => prev.map(x => (x.id === d.id ? { ...x, nom } : x)));
+    } catch (e) {
+      console.error(e);
+      alert("La modification du nom a échoué. Réessaie.");
+    }
+  };
+
   const colors  = ["rgba(255,77,90,0.15)","rgba(255,140,66,0.15)","rgba(108,99,255,0.15)","rgba(16,185,129,0.15)","rgba(99,102,241,0.15)","rgba(236,72,153,0.15)"];
   const emojis  = ["🏠","📦","🚗","🏪","🏭","📫"];
 
@@ -136,6 +155,15 @@ export default function DossiersPage() {
               <p style={{ fontSize: "14px", fontWeight: 700, color: "white", marginBottom: "2px" }}>{d.nom}</p>
               <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{d.articleIds?.length || 0} article{(d.articleIds?.length || 0) > 1 ? "s" : ""}</p>
             </div>
+            {admin && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleRename(d); }}
+                title="Renommer le dossier"
+                style={{ width: "34px", height: "34px", borderRadius: "11px", background: "rgba(255,255,255,0.08)", border: "none", cursor: "pointer", fontSize: "15px", flexShrink: 0, color: "white" }}
+              >
+                ✏️
+              </button>
+            )}
             <div style={{ padding: "4px 10px", borderRadius: "50px", fontSize: "10px", fontWeight: 700, background: "rgba(255,77,90,0.15)", color: "#ff4d5a" }}>›</div>
           </div>
         ))}
