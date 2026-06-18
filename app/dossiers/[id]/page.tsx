@@ -17,6 +17,7 @@ export default function DossierPage() {
   // Sélecteur d'ajout en masse
   const [showPicker, setShowPicker]   = useState(false);
   const [allArticles, setAllArticles] = useState<Article[]>([]);
+  const [allDossiers, setAllDossiers] = useState<Dossier[]>([]);
   const [selected, setSelected]       = useState<Set<string>>(new Set());
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerFilter, setPickerFilter] = useState<"none" | "all">("none");
@@ -42,7 +43,9 @@ export default function DossierPage() {
       ]);
       const dataD = await resD.json();
       const dataA = await resA.json();
-      setDossier((dataD.dossiers || []).find((d: Dossier) => d.id === id) || null);
+      const tousDossiers: Dossier[] = dataD.dossiers || [];
+      setAllDossiers(tousDossiers);
+      setDossier(tousDossiers.find((d: Dossier) => d.id === id) || null);
       setArticles(dataA.articles || []);
     } catch (e) {
       console.error(e);
@@ -92,9 +95,12 @@ export default function DossierPage() {
   };
 
   // Articles proposés dans le sélecteur (jamais ceux déjà dans CE dossier)
+  // « Sans dossier » = pas d'identifiant OU identifiant qui ne pointe vers aucun
+  // dossier existant (articles orphelins après suppression d'un dossier).
+  const dossierIdsValides = new Set(allDossiers.map(d => d.id));
   const pickerArticles = allArticles
     .filter(a => a.dossierId !== id)
-    .filter(a => pickerFilter === "all" ? true : (!a.dossierId || a.dossierId === ""))
+    .filter(a => pickerFilter === "all" ? true : (!a.dossierId || !dossierIdsValides.has(a.dossierId)))
     .filter(a => {
       if (!pickerSearch.trim()) return true;
       const q = pickerSearch.toLowerCase();
