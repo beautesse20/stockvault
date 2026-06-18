@@ -95,12 +95,13 @@ export default function DossierPage() {
   };
 
   // Articles proposés dans le sélecteur (jamais ceux déjà dans CE dossier)
-  // « Sans dossier » = pas d'identifiant OU identifiant qui ne pointe vers aucun
-  // dossier existant (articles orphelins après suppression d'un dossier).
+  // « Rangé » = appartient à un dossier qui existe encore. Un article dont le
+  // dossier a été supprimé (orphelin) n'est PAS rangé → il est « sans dossier ».
   const dossierIdsValides = new Set(allDossiers.map(d => d.id));
+  const estRange = (a: Article) => !!(a.dossierId && dossierIdsValides.has(a.dossierId));
   const pickerArticles = allArticles
     .filter(a => a.dossierId !== id)
-    .filter(a => pickerFilter === "all" ? true : (!a.dossierId || !dossierIdsValides.has(a.dossierId)))
+    .filter(a => pickerFilter === "all" ? true : !estRange(a))
     .filter(a => {
       if (!pickerSearch.trim()) return true;
       const q = pickerSearch.toLowerCase();
@@ -245,7 +246,7 @@ export default function DossierPage() {
                         <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#ff4d5a", marginBottom: "2px" }}>{a.ref}</p>
                         <p style={{ fontSize: "13px", fontWeight: 700, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.nom}</p>
                       </div>
-                      {a.dossierId && a.dossierId !== "" && (
+                      {estRange(a) && (
                         <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>déjà rangé</span>
                       )}
                     </button>
