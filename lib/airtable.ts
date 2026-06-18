@@ -31,6 +31,7 @@ export type Article = {
   defaut?: string;
   images?: { url: string; filename: string }[];
   dossierId?: string;
+  masquerDuSite?: boolean;
 };
 
 export type Dossier = {

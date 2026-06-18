@@ -43,6 +43,7 @@ export type Article = {
   defaut?:     string;
   images?:     { url: string; filename: string }[];
   dossierId?:  string;
+  masquerDuSite?: boolean;
 };
 
 export type Dossier = {
@@ -136,6 +137,18 @@ export async function assignArticlesToDossier(ids: string[], dossierId: string):
     const chunk = ids.slice(i, i + 500);
     const batch = writeBatch(db);
     chunk.forEach(id => batch.update(doc(db, "articles", id), { dossierId }));
+    await batch.commit();
+  }
+}
+
+// Affiche / masque plusieurs articles sur le site public (écriture groupée).
+// masquerDuSite est un champ propre à l'app (pas une colonne du Sheet),
+// donc on ne touche pas updatedAt et la synchro Sheet ne le réécrit jamais.
+export async function setArticlesMasque(ids: string[], masquer: boolean): Promise<void> {
+  for (let i = 0; i < ids.length; i += 500) {
+    const chunk = ids.slice(i, i + 500);
+    const batch = writeBatch(db);
+    chunk.forEach(id => batch.update(doc(db, "articles", id), { masquerDuSite: masquer }));
     await batch.commit();
   }
 }

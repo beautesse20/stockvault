@@ -12,11 +12,16 @@ export default function ArticlesPage() {
   const [loading, setLoading]   = useState(true);
   const [filtre, setFiltre]     = useState("Tous");
   const [search, setSearch]     = useState("");
+  const [isAdmin, setIsAdmin]             = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selected, setSelected]           = useState<string[]>([]);
+  const [busy, setBusy]                   = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const user = getSession();
     if (!user) { router.push("/"); return; }
+    setIsAdmin(user.role === "Admin");
     fetchData(user);
   }, []);
 
@@ -40,6 +45,31 @@ export default function ArticlesPage() {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleSelect = (id: string) =>
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const annulerSelection = () => { setSelectionMode(false); setSelected([]); };
+
+  const appliquerVisibilite = async (masquer: boolean) => {
+    if (selected.length === 0) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/articles/visibilite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selected, masquer }),
+      });
+      if (!res.ok) throw new Error("échec");
+      setArticles(prev => prev.map(a => selected.includes(a.id) ? { ...a, masquerDuSite: masquer } : a));
+      annulerSelection();
+    } catch (e) {
+      console.error(e);
+      alert("L'opération a échoué. Réessaie.");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -88,6 +118,11 @@ export default function ArticlesPage() {
             <button key={f} onClick={() => setFiltre(f)} style={{ padding: "7px 14px", borderRadius: "50px", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit", background: filtre === f ? "#ff4d5a" : "white", color: filtre === f ? "white" : "#8892b0", border: filtre === f ? "none" : "1px solid #e2e5f0", boxShadow: filtre === f ? "0 4px 12px rgba(255,77,90,0.3)" : "0 2px 6px rgba(26,31,58,0.06)" }}>{f}</button>
           ))}
         </div>
+        {isAdmin && (
+          <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={() => selectionMode ? annulerSelection() : setSelectionMode(true)} style={{ padding: "7px 14px", borderRadius: "50px", fontSize: "11px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", border: "1px solid #e2e5f0", background: selectionMode ? "#1a1f3a" : "white", color: selectionMode ? "white" : "#1a1f3a", boxShadow: "0 2px 6px rgba(26,31,58,0.06)" }}>{selectionMode ? "✕ Annuler" : "☑️ Sélectionner"}</button>
+          </div>
+        )}
       </div>
 
       {/* Zone bleu nuit */}
@@ -100,8 +135,14 @@ export default function ArticlesPage() {
         )}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           {articlesFiltres.map((a, i) => (
-            <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden", cursor: "pointer" }}>
+            <div key={a.id} onClick={() => selectionMode ? toggleSelect(a.id) : router.push(`/articles/${a.id}`)} style={{ background: "rgba(255,255,255,0.05)", border: selected.includes(a.id) ? "2px solid #ff4d5a" : "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden", cursor: "pointer", position: "relative" }}>
               <div style={{ height: "100px", background: a.images && a.images.length > 0 ? "transparent" : gradients[i % gradients.length], display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px", position: "relative" }}>
+                {a.masquerDuSite && (
+                  <div style={{ position: "absolute", bottom: "6px", left: "6px", zIndex: 2, background: "rgba(26,31,58,0.85)", borderRadius: "8px", padding: "2px 7px", fontSize: "9px", fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>🚫 Masqué</div>
+                )}
+                {selectionMode && (
+                  <div style={{ position: "absolute", top: "6px", left: "6px", zIndex: 2, width: "22px", height: "22px", borderRadius: "50%", border: "2px solid white", background: selected.includes(a.id) ? "#ff4d5a" : "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", color: "white", lineHeight: 1 }}>{selected.includes(a.id) ? "✓" : ""}</div>
+                )}
                 {a.images && a.images.length > 0 ? (
                   <>
                     <img src={thumb(a.images[0].url)} alt={a.nom} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -124,6 +165,14 @@ export default function ArticlesPage() {
           ))}
         </div>
       </div>
+
+      {selectionMode && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 60, background: "rgba(26,31,58,0.97)", borderTop: "1px solid rgba(255,255,255,0.1)", padding: "14px 16px calc(14px + env(safe-area-inset-bottom))", display: "flex", alignItems: "center", gap: "10px", boxShadow: "0 -6px 20px rgba(0,0,0,0.3)" }}>
+          <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", fontWeight: 600, flexShrink: 0 }}>{selected.length} sél.</span>
+          <button onClick={() => appliquerVisibilite(true)} disabled={busy || selected.length === 0} style={{ flex: 1, padding: "11px", borderRadius: "12px", border: "none", background: "rgba(255,255,255,0.12)", color: "white", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: (busy || selected.length === 0) ? 0.5 : 1 }}>🚫 Masquer</button>
+          <button onClick={() => appliquerVisibilite(false)} disabled={busy || selected.length === 0} style={{ flex: 1, padding: "11px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg, #10b981, #059669)", color: "white", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: (busy || selected.length === 0) ? 0.5 : 1 }}>✅ Afficher</button>
+        </div>
+      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

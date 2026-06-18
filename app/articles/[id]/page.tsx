@@ -20,6 +20,7 @@ export default function ArticlePage() {
   const [form, setForm]           = useState<Partial<Article>>({});
   const [isAdmin, setIsAdmin]     = useState(false);
   const [userSession, setUserSession] = useState<any>(null);
+  const [visSaving, setVisSaving] = useState(false);
   const fileRef                   = useRef<HTMLInputElement>(null);
   const touchStartX               = useRef(0);
   const router                    = useRouter();
@@ -72,6 +73,27 @@ export default function ArticlePage() {
       setEditing(false);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const toggleVisible = async () => {
+    if (!article) return;
+    const nouveauMasque = !(article.masquerDuSite === true); // on inverse l'état
+    setVisSaving(true);
+    try {
+      const res = await fetch(`/api/articles/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ masquerDuSite: nouveauMasque }),
+      });
+      if (!res.ok) throw new Error("échec");
+      setArticle(prev => (prev ? { ...prev, masquerDuSite: nouveauMasque } : prev));
+      setForm(prev => ({ ...prev, masquerDuSite: nouveauMasque }));
+    } catch (e) {
+      console.error(e);
+      alert("Impossible de modifier l'affichage en ligne. Réessaie.");
+    } finally {
+      setVisSaving(false);
     }
   };
 
@@ -150,6 +172,10 @@ export default function ArticlePage() {
   );
 
   const images = article.images || [];
+  const dossierNom = dossiers.find(d => d.id === article.dossierId)?.nom || "";
+  const lieuOk = /paris|vancouver/i.test(dossierNom);
+  const masque = article.masquerDuSite === true;
+  const eligibleEnLigne = lieuOk && images.length > 0;
 
   return (
     <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", flexDirection: "column" }}>
@@ -210,6 +236,30 @@ export default function ArticlePage() {
             </span>
           )}
         </div>
+
+        {/* Affichage sur le site — Admin seulement */}
+        {isAdmin && !editing && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "12px 14px", marginBottom: "16px" }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "white", marginBottom: "3px" }}>🌐 Affichage sur le site</p>
+              <p style={{ fontSize: "10px", color: masque ? "#8892b0" : (eligibleEnLigne ? "#10b981" : "#E58A00") }}>
+                {masque
+                  ? "Masqué manuellement"
+                  : eligibleEnLigne
+                    ? "Visible en ligne"
+                    : "Pas en ligne (photo ou dossier Paris/Vancouver manquant)"}
+              </p>
+            </div>
+            <button
+              onClick={toggleVisible}
+              disabled={visSaving}
+              title={masque ? "Afficher sur le site" : "Masquer du site"}
+              style={{ position: "relative", width: "50px", height: "28px", borderRadius: "50px", border: "none", cursor: "pointer", flexShrink: 0, background: masque ? "rgba(255,255,255,0.18)" : "linear-gradient(135deg, #10b981, #059669)", opacity: visSaving ? 0.5 : 1, transition: "background 0.2s" }}
+            >
+              <span style={{ position: "absolute", top: "3px", left: masque ? "3px" : "25px", width: "22px", height: "22px", borderRadius: "50%", background: "white", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+            </button>
+          </div>
+        )}
 
         {/* Infos article */}
         {!editing ? (
