@@ -177,6 +177,15 @@ export default function ArticlePage() {
   const masque = article.masquerDuSite === true;
   const eligibleEnLigne = lieuOk && images.length > 0;
 
+  // Affiche la batterie en pourcentage : 0.95 → "95 %", 95 → "95 %", "95%" → "95 %"
+  const fmtBatterie = (v?: string | number) => {
+    if (v === undefined || v === null || String(v).trim() === "") return "";
+    const n = parseFloat(String(v).replace(",", ".").replace("%", "").trim());
+    if (isNaN(n)) return String(v);
+    const pct = n <= 1 ? n * 100 : n;
+    return Math.round(pct) + " %";
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", flexDirection: "column" }}>
 
@@ -269,7 +278,7 @@ export default function ArticlePage() {
               { label: "Couleur",  val: article.couleur },
               { label: "Écran",    val: article.ecran },
               { label: "Coque",    val: article.coque },
-              { label: "Batterie", val: article.batterie },
+              { label: "Batterie", val: fmtBatterie(article.batterie) },
               { label: "Défaut",   val: article.defaut },
             ].filter(f => f.val).map(f => (
               <div key={f.label} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "10px 12px" }}>
