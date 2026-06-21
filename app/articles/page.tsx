@@ -73,11 +73,12 @@ export default function ArticlesPage() {
     }
   };
 
-  const filtres = ["Tous", "Téléphone", "Divers", "Sans photo"];
+  const filtres = ["Tous", "Téléphone", "Divers", "Sans photo", "Sans dossier"];
   const articlesFiltres = articles
     .filter(a => {
-      if (filtre === "Tous")       return true;
-      if (filtre === "Sans photo") return !a.images || a.images.length === 0;
+      if (filtre === "Tous")          return true;
+      if (filtre === "Sans photo")    return !a.images || a.images.length === 0;
+      if (filtre === "Sans dossier")  return !a.dossierId;
       return a.type === filtre;
     })
     .filter(a => !search || a.nom.toLowerCase().includes(search.toLowerCase()) || a.ref.toLowerCase().includes(search.toLowerCase()));
