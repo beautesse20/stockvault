@@ -61,8 +61,8 @@ export default function PhotosMassePage() {
       const data = await res.json();
       const arts: Article[] = (data.articles || []).sort((a: Article, b: Article) => {
         if (!a.createdAt && !b.createdAt) return 0;
-        if (!a.createdAt) return 1;
-        if (!b.createdAt) return -1;
+        if (!a.createdAt) return -1;
+        if (!b.createdAt) return 1;
         return b.createdAt.localeCompare(a.createdAt);
       });
       setAllArticles(arts);
