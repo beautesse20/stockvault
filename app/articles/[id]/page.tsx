@@ -21,6 +21,7 @@ export default function ArticlePage() {
   const [isAdmin, setIsAdmin]     = useState(false);
   const [userSession, setUserSession] = useState<any>(null);
   const [visSaving, setVisSaving] = useState(false);
+  const [modal, setModal]         = useState<null | { message: string; onConfirm?: () => void }>(null);
   const fileRef                   = useRef<HTMLInputElement>(null);
   const touchStartX               = useRef(0);
   const router                    = useRouter();
@@ -91,7 +92,7 @@ export default function ArticlePage() {
       setForm(prev => ({ ...prev, masquerDuSite: nouveauMasque }));
     } catch (e) {
       console.error(e);
-      alert("Impossible de modifier l'affichage en ligne. Réessaie.");
+      setModal({ message: "Impossible de modifier l'affichage en ligne. Réessaie." });
     } finally {
       setVisSaving(false);
     }
@@ -118,7 +119,6 @@ export default function ArticlePage() {
   };
 
   const handleDeleteImage = async (index: number) => {
-    if (!confirm("Supprimer cette photo ?")) return;
     await fetch(`/api/articles/${id}/images`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -139,7 +139,6 @@ export default function ArticlePage() {
   };
 
   const handleDeleteArticle = async () => {
-    if (!confirm("Supprimer définitivement cet article ?")) return;
     setSaving(true);
     try {
       await fetch(`/api/articles/${id}`, { method: "DELETE" });
@@ -212,7 +211,7 @@ export default function ArticlePage() {
 
         {/* Bouton supprimer photo — Admin seulement */}
         {images.length > 0 && (
-          <button onClick={() => handleDeleteImage(photoIdx)} style={{ position: "absolute", bottom: "18px", right: "14px", width: "64px", height: "64px", borderRadius: "18px", background: "rgba(255,77,90,0.9)", border: "none", cursor: "pointer", fontSize: "26px", color: "white" }}>🗑</button>
+          <button onClick={() => setModal({ message: "Supprimer cette photo ?", onConfirm: () => handleDeleteImage(photoIdx) })} style={{ position: "absolute", bottom: "18px", right: "14px", width: "64px", height: "64px", borderRadius: "18px", background: "rgba(255,77,90,0.9)", border: "none", cursor: "pointer", fontSize: "26px", color: "white" }}>🗑</button>
         )}
 
         {images.length > 1 && (
@@ -348,7 +347,7 @@ export default function ArticlePage() {
               <button onClick={() => setShowMove(true)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>📂 Déplacer vers un dossier</button>
               {/* Supprimer l'article — Admin seulement */}
               {isAdmin && (
-                <button onClick={handleDeleteArticle} disabled={saving} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,77,90,0.12)", border: "1px solid rgba(255,77,90,0.3)", color: "#ff4d5a", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>🗑 Supprimer l'article</button>
+                <button onClick={() => setModal({ message: "Supprimer définitivement cet article ?", onConfirm: handleDeleteArticle })} disabled={saving} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,77,90,0.12)", border: "1px solid rgba(255,77,90,0.3)", color: "#ff4d5a", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>🗑 Supprimer l'article</button>
               )}
             </>
           ) : (
@@ -390,6 +389,25 @@ export default function ArticlePage() {
             {images.map((_: any, i: number) => (
               <button key={i} onClick={() => setPhotoIdx(i)} style={{ height: "5px", width: i === photoIdx ? "14px" : "5px", borderRadius: "3px", border: "none", cursor: "pointer", background: i === photoIdx ? "#ff4d5a" : "rgba(255,255,255,0.3)", transition: "all 0.2s", padding: 0 }} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Fenêtre de confirmation / message intégrée (remplace les confirm/alert natifs) */}
+      {modal && (
+        <div onClick={() => setModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#222845", borderRadius: "22px", width: "100%", maxWidth: "340px", padding: "24px 20px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
+            <p style={{ fontSize: "15px", fontWeight: 700, color: "white", textAlign: "center", marginBottom: "20px", lineHeight: 1.4 }}>{modal.message}</p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              {modal.onConfirm ? (
+                <>
+                  <button onClick={() => setModal(null)} style={{ flex: 1, padding: "13px", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.06)", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annuler</button>
+                  <button onClick={() => { const fn = modal.onConfirm; setModal(null); if (fn) fn(); }} style={{ flex: 1, padding: "13px", borderRadius: "14px", border: "none", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Confirmer</button>
+                </>
+              ) : (
+                <button onClick={() => setModal(null)} style={{ flex: 1, padding: "13px", borderRadius: "14px", border: "none", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>OK</button>
+              )}
+            </div>
           </div>
         </div>
       )}
