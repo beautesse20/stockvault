@@ -17,6 +17,7 @@ type Article = {
   dossierId?: string;
   images?: Img[];
   createdAt?: string;
+  sheetRowIndex?: number;
 };
 
 const CONCURRENCY = 3;
@@ -60,10 +61,9 @@ export default function PhotosMassePage() {
       const res  = await fetch("/api/articles", { cache: "no-store" });
       const data = await res.json();
       const arts: Article[] = (data.articles || []).sort((a: Article, b: Article) => {
-        if (!a.createdAt && !b.createdAt) return 0;
-        if (!a.createdAt) return -1;
-        if (!b.createdAt) return 1;
-        return b.createdAt.localeCompare(a.createdAt);
+        const ai = a.sheetRowIndex ?? -1;
+        const bi = b.sheetRowIndex ?? -1;
+        return bi - ai;
       });
       setAllArticles(arts);
 
