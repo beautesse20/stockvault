@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
 import { thumb } from "@/lib/img";
+import { getCache, setCache, invalidateCache } from "@/lib/cache";
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -25,14 +26,18 @@ export default function ArticlesPage() {
     fetchData(user);
   }, []);
 
-  const fetchData = async (user: any) => {
+  const fetchData = async (user: any, force = false) => {
     try {
-      const [resA, resD] = await Promise.all([
-        fetch("/api/articles", { cache: "no-store" }),
-        fetch("/api/dossiers", { cache: "no-store" }),
-      ]);
-      const dataA = await resA.json();
-      const dataD = await resD.json();
+      let dataA = !force && getCache<any>("articles");
+      let dataD = !force && getCache<any>("dossiers");
+      if (!dataA || !dataD) {
+        const [resA, resD] = await Promise.all([
+          !dataA ? fetch("/api/articles", { cache: "no-store" }) : Promise.resolve(null),
+          !dataD ? fetch("/api/dossiers", { cache: "no-store" }) : Promise.resolve(null),
+        ]);
+        if (resA) { dataA = await resA.json(); setCache("articles", dataA); }
+        if (resD) { dataD = await resD.json(); setCache("dossiers", dataD); }
+      }
       const allDossiers: Dossier[] = dataD.dossiers || [];
       const allArticles: Article[] = dataA.articles || [];
       setDossiers(allDossiers);
@@ -63,6 +68,7 @@ export default function ArticlesPage() {
         body: JSON.stringify({ ids: selected, masquer }),
       });
       if (!res.ok) throw new Error("échec");
+      invalidateCache("articles");
       setArticles(prev => prev.map(a => selected.includes(a.id) ? { ...a, masquerDuSite: masquer } : a));
       annulerSelection();
     } catch (e) {
