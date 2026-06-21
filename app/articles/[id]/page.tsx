@@ -98,24 +98,27 @@ export default function ArticlePage() {
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    if (fileRef.current) fileRef.current.value = "";
     if (!files.length) return;
-    const remaining = 10 - (article?.images?.length || 0);
-    const toUpload  = files.slice(0, remaining);
-    setUploading(true);
-    try {
-      for (const file of toUpload) {
-        const compressed = await compressImage(file);
-        const formData = new FormData();
-        formData.append("file", compressed);
-        await fetch(`/api/articles/${id}/images`, { method: "POST", body: formData });
+    // Laisser iOS fermer la galerie avant de démarrer la compression
+    setTimeout(async () => {
+      const remaining = 10 - (article?.images?.length || 0);
+      const toUpload  = files.slice(0, remaining);
+      setUploading(true);
+      try {
+        for (const file of toUpload) {
+          const compressed = await compressImage(file);
+          const formData = new FormData();
+          formData.append("file", compressed);
+          await fetch(`/api/articles/${id}/images`, { method: "POST", body: formData });
+        }
+        await fetchData();
+      } finally {
+        setUploading(false);
       }
-      await fetchData();
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
+    }, 150);
   };
 
   const handleDeleteImage = async (index: number) => {
