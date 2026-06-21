@@ -8,6 +8,7 @@ import { thumb, medium } from "@/lib/img";
 import { compressImage } from "@/lib/compress";
 import { uploadToCloudinary } from "@/lib/cloudinary-direct";
 import { appendArticleImage } from "@/lib/firebase";
+import { invalidateCache } from "@/lib/cache";
 
 export default function ArticlePage() {
   const [article, setArticle]     = useState<Article | null>(null);
@@ -72,6 +73,7 @@ export default function ArticlePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+      invalidateCache("articles");
       await fetchData();
       setEditing(false);
     } finally {
@@ -128,6 +130,7 @@ export default function ArticlePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ imageIndex: index }),
     });
+    invalidateCache("articles");
     await fetchData();
     setPhotoIdx(0);
   };
@@ -138,6 +141,7 @@ export default function ArticlePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dossierId }),
     });
+    invalidateCache("articles", "dossiers");
     setShowMove(false);
     await fetchData();
   };
@@ -146,6 +150,7 @@ export default function ArticlePage() {
     setSaving(true);
     try {
       await fetch(`/api/articles/${id}`, { method: "DELETE" });
+      invalidateCache("articles", "dossiers");
       router.push(article?.dossierId ? `/dossiers/${article.dossierId}` : "/dossiers");
     } catch (e) {
       console.error(e);
