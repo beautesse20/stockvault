@@ -332,7 +332,7 @@ export default function ArticlePage() {
               </button>
             )}
           </div>
-          <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleUpload} />
+          <input ref={fileRef} type="file" accept="image/*" multiple style={{ position: "fixed", top: "-200px", opacity: 0, width: 0, height: 0 }} onChange={handleUpload} />
         </div>
 
         {/* Boutons — selon rôle */}
