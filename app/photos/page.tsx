@@ -172,7 +172,7 @@ export default function PhotosMassePage() {
       {/* Zone blanche */}
       <div style={{ background: "#f7f8fc", borderRadius: "0 0 0 60px", paddingTop: "60px", paddingBottom: "28px", paddingLeft: "20px", paddingRight: "20px", position: "relative", zIndex: 2 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "18px" }}>
-          <button onClick={() => router.push("/dossiers")} style={{ width: "40px", height: "40px", borderRadius: "13px", background: "white", border: "none", cursor: "pointer", boxShadow: "0 3px 10px rgba(26,31,58,0.1)", fontSize: "18px", color: "#1a1f3a" }}>‹</button>
+          <button onClick={() => router.push("/dossiers")} style={{ width: "60px", height: "60px", borderRadius: "16px", background: "white", border: "none", cursor: "pointer", boxShadow: "0 3px 10px rgba(26,31,58,0.1)", fontSize: "24px", color: "#1a1f3a" }}>‹</button>
           <div>
             <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "3px" }}>Ajout rapide</p>
             <h1 style={{ fontSize: "22px", fontWeight: 900, color: "#1a1f3a" }}>Photos en masse</h1>
