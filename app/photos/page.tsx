@@ -16,6 +16,7 @@ type Article = {
   type?: string;
   dossierId?: string;
   images?: Img[];
+  createdAt?: string;
 };
 
 const CONCURRENCY = 3;
@@ -58,7 +59,12 @@ export default function PhotosMassePage() {
     try {
       const res  = await fetch("/api/articles", { cache: "no-store" });
       const data = await res.json();
-      const arts: Article[] = data.articles || [];
+      const arts: Article[] = (data.articles || []).sort((a: Article, b: Article) => {
+        if (!a.createdAt && !b.createdAt) return 0;
+        if (!a.createdAt) return 1;
+        if (!b.createdAt) return -1;
+        return b.createdAt.localeCompare(a.createdAt);
+      });
       setAllArticles(arts);
 
       const imgMap: Record<string, Img[]> = {};
