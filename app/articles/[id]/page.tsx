@@ -212,7 +212,7 @@ export default function ArticlePage() {
           </div>
         )}
 
-        <button onClick={() => router.back()} style={{ position: "absolute", top: "18px", left: "14px", width: "36px", height: "36px", borderRadius: "11px", background: "white", border: "none", cursor: "pointer", boxShadow: "0 2px 10px rgba(26,31,58,0.15)", fontSize: "16px", color: "#1a1f3a" }}>‹</button>
+        <button onClick={() => router.back()} style={{ position: "absolute", top: "18px", left: "14px", width: "54px", height: "54px", borderRadius: "14px", background: "white", border: "none", cursor: "pointer", boxShadow: "0 2px 10px rgba(26,31,58,0.15)", fontSize: "22px", color: "#1a1f3a" }}>‹</button>
 
         {images.length > 0 && (
           <div style={{ position: "absolute", top: "18px", right: "14px", background: "white", borderRadius: "10px", padding: "5px 10px", fontSize: "10px", fontWeight: 700, color: "#1a1f3a", boxShadow: "0 2px 10px rgba(26,31,58,0.12)" }}>{images.length} / 10 📷</div>
@@ -392,7 +392,7 @@ export default function ArticlePage() {
       {lightbox && images.length > 0 && (
         <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{ position: "fixed", inset: 0, background: "black", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <button onClick={() => setLightbox(false)} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", color: "white", fontSize: "20px", cursor: "pointer", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-          <a href={`/api/download?url=${encodeURIComponent(images[photoIdx]?.url)}&filename=photo-${photoIdx + 1}.jpg`} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", textDecoration: "none", zIndex: 2 }}>⬇️</a>
+          <a href={`/api/download?url=${encodeURIComponent(images[photoIdx]?.url)}&filename=photo-${photoIdx + 1}.jpg`} target="_blank" rel="noopener noreferrer" style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", textDecoration: "none", zIndex: 2 }}>⬇️</a>
           <img src={medium(images[photoIdx]?.url)} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
           <div style={{ position: "absolute", bottom: "30px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
             {images.map((_: any, i: number) => (
