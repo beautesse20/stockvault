@@ -139,7 +139,7 @@ export default function DossierPage() {
         paddingLeft: "20px", paddingRight: "20px",
         position: "relative", zIndex: 2,
       }}>
-        <button onClick={() => router.push("/dossiers")} style={{ background: "none", border: "none", color: "#ff4d5a", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: "12px", display: "flex", alignItems: "center", gap: "4px" }}>‹ Retour</button>
+        <button onClick={() => router.push("/dossiers")} style={{ background: "none", border: "none", color: "#ff4d5a", fontSize: "21px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: "12px", display: "flex", alignItems: "center", gap: "4px" }}>‹ Retour</button>
         <h1 style={{ fontSize: "24px", fontWeight: 900, color: "#1a1f3a", marginBottom: "4px" }}>{dossier?.nom || "Dossier"}</h1>
         <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "16px" }}>{articles.length} article{articles.length > 1 ? "s" : ""}</p>
         <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
