@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession, clearSession } from "@/lib/auth";
 import { Dossier } from "@/lib/airtable";
+import { getCache, setCache, invalidateCache } from "@/lib/cache";
 
 export default function DossiersPage() {
   const [dossiers, setDossiers]           = useState<Dossier[]>([]);
@@ -25,23 +26,25 @@ export default function DossiersPage() {
 
   const fetchDossiers = async (user: any) => {
     try {
-      const res  = await fetch("/api/dossiers", { cache: "no-store" });
-      const data = await res.json();
-      const all: Dossier[] = data.dossiers || [];
+      let dataD = getCache<any>("dossiers");
+      let dataTotal = getCache<any>("articles");
+      const [resD, resA] = await Promise.all([
+        !dataD ? fetch("/api/dossiers", { cache: "no-store" }) : Promise.resolve(null),
+        !dataTotal ? fetch("/api/articles", { cache: "no-store" }) : Promise.resolve(null),
+      ]);
+      if (resD) { dataD = await resD.json(); setCache("dossiers", dataD); }
+      if (resA) { dataTotal = await resA.json(); setCache("articles", dataTotal); }
+
+      const all: Dossier[] = dataD.dossiers || [];
 
       if (user.role === "Admin") {
         setDossiers(all);
-        const resTotal  = await fetch("/api/articles", { cache: "no-store" });
-        const dataTotal = await resTotal.json();
         const arts = dataTotal.articles || [];
         setArticles(arts);
         setTotalArticles(arts.length);
       } else {
   const filtered = all.filter(d => user.dossierIds?.includes(d.id));
   setDossiers(filtered);
-  // Compter uniquement les articles dans ses dossiers
-  const resTotal  = await fetch("/api/articles", { cache: "no-store" });
-  const dataTotal = await resTotal.json();
   const allArticles = dataTotal.articles || [];
   const mine = allArticles.filter((a: any) =>
     user.dossierIds?.includes(a.dossierId)
@@ -68,6 +71,7 @@ export default function DossiersPage() {
         body: JSON.stringify({ nom }),
       });
       if (!res.ok) throw new Error("échec");
+      invalidateCache("dossiers");
       setDossiers(prev => prev.map(x => (x.id === d.id ? { ...x, nom } : x)));
     } catch (e) {
       console.error(e);
