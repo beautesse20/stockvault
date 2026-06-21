@@ -6,6 +6,8 @@ import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
 import { thumb, medium } from "@/lib/img";
 import { compressImage } from "@/lib/compress";
+import { uploadToCloudinary } from "@/lib/cloudinary-direct";
+import { appendArticleImage } from "@/lib/firebase";
 
 export default function ArticlePage() {
   const [article, setArticle]     = useState<Article | null>(null);
@@ -102,18 +104,17 @@ export default function ArticlePage() {
     const files = Array.from(e.target.files || []);
     if (fileRef.current) fileRef.current.value = "";
     if (!files.length) return;
-    // Laisser iOS fermer la galerie avant de démarrer la compression
     setTimeout(async () => {
       const remaining = 10 - (article?.images?.length || 0);
       const toUpload  = files.slice(0, remaining);
+      if (!toUpload.length) return;
       setUploading(true);
       try {
-        for (const file of toUpload) {
+        await Promise.all(toUpload.map(async (file) => {
           const compressed = await compressImage(file);
-          const formData = new FormData();
-          formData.append("file", compressed);
-          await fetch(`/api/articles/${id}/images`, { method: "POST", body: formData });
-        }
+          const url = await uploadToCloudinary(compressed);
+          await appendArticleImage(id, { url, filename: file.name });
+        }));
         await fetchData();
       } finally {
         setUploading(false);
