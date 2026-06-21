@@ -134,16 +134,17 @@ export default function PhotosMassePage() {
     if (fileRef.current) fileRef.current.value = "";
     if (!articleId || !files.length) return;
 
-    // Respecter le max par article (photos déjà présentes + en cours)
-    const already   = (imagesByArticle[articleId] || []).length + (busyByArticle[articleId] || 0);
-    const remaining = Math.max(0, MAX_PER_ARTICLE - already);
-    const toAdd     = files.slice(0, remaining);
-    if (!toAdd.length) return;
+    setTimeout(() => {
+      const already   = (imagesByArticle[articleId] || []).length + (busyByArticle[articleId] || 0);
+      const remaining = Math.max(0, MAX_PER_ARTICLE - already);
+      const toAdd     = files.slice(0, remaining);
+      if (!toAdd.length) return;
 
-    setBusyByArticle(prev => ({ ...prev, [articleId]: (prev[articleId] || 0) + toAdd.length }));
-    setTotal(t => t + toAdd.length);
-    toAdd.forEach(file => queueRef.current.push({ articleId, file }));
-    pump();
+      setBusyByArticle(prev => ({ ...prev, [articleId]: (prev[articleId] || 0) + toAdd.length }));
+      setTotal(t => t + toAdd.length);
+      toAdd.forEach(file => queueRef.current.push({ articleId, file }));
+      pump();
+    }, 150);
   };
 
   const retryArticle = (articleId: string) => {
@@ -276,7 +277,7 @@ export default function PhotosMassePage() {
         })}
       </div>
 
-      <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onFilesSelected} />
+      <input ref={fileRef} type="file" accept="image/*" multiple style={{ position: "fixed", top: "-200px", opacity: 0, width: 0, height: 0 }} onChange={onFilesSelected} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
