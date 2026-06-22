@@ -44,6 +44,7 @@ export type Article = {
   images?:     { url: string; filename: string }[];
   dossierId?:  string;
   masquerDuSite?: boolean;
+  vendu?:         boolean;
 };
 
 export type Dossier = {
@@ -101,7 +102,9 @@ export async function getArticles(dossierId?: string): Promise<Article[]> {
   } else {
     snap = await getDocs(collection(db, "articles"));
   }
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Article));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Article))
+    .filter(a => !a.vendu);
 }
 
 export async function getArticle(id: string): Promise<Article> {
