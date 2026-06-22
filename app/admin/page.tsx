@@ -19,6 +19,8 @@ export default function AdminPage() {
   const [savingUser, setSavingUser]     = useState(false);
   const [newDossierNom, setNewDossierNom] = useState("");
   const [savingDossier, setSavingDossier] = useState(false);
+  const [syncing, setSyncing]             = useState(false);
+  const [syncMsg, setSyncMsg]             = useState<{ ok: boolean; text: string } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -59,6 +61,24 @@ export default function AdminPage() {
     } finally { setSavingUser(false); }
   };
 
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const res  = await fetch("/api/sync", { method: "POST" });
+      const data = await res.json();
+      setSyncMsg(data.success
+        ? { ok: true,  text: "✓ Synchronisation terminée" }
+        : { ok: false, text: `Erreur : ${data.error || "inconnue"}` }
+      );
+    } catch {
+      setSyncMsg({ ok: false, text: "Erreur réseau" });
+    } finally {
+      setSyncing(false);
+      setTimeout(() => setSyncMsg(null), 5000);
+    }
+  };
+
   const handleCreateDossier = async () => {
     if (!newDossierNom) return;
     setSavingDossier(true);
@@ -95,13 +115,33 @@ export default function AdminPage() {
         <button onClick={() => router.push("/dossiers")} style={{ background: "none", border: "none", color: "#ff4d5a", fontSize: "21px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: "12px" }}>‹ Retour</button>
         <h1 style={{ fontSize: "24px", fontWeight: 900, color: "#1a1f3a", marginBottom: "4px" }}>Paramètres</h1>
         <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "16px" }}>Gestion des accès et dossiers</p>
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
           {(["users", "dossiers"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: "50px", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", background: tab === t ? "#ff4d5a" : "white", color: tab === t ? "white" : "#8892b0", border: tab === t ? "none" : "1px solid #e2e5f0", boxShadow: tab === t ? "0 4px 12px rgba(255,77,90,0.3)" : "0 2px 6px rgba(26,31,58,0.06)" }}>
               {t === "users" ? "👤 Utilisateurs" : "📂 Dossiers"}
             </button>
           ))}
         </div>
+
+        {/* Bouton Sync */}
+        <button onClick={handleSync} disabled={syncing} style={{
+          width: "100%", padding: "16px", borderRadius: "18px",
+          background: syncing ? "#e2e5f0" : "linear-gradient(135deg, #1a1f3a, #2d3561)",
+          border: "none", color: "white", fontSize: "15px", fontWeight: 700,
+          cursor: syncing ? "not-allowed" : "pointer", fontFamily: "inherit",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+          boxShadow: syncing ? "none" : "0 8px 20px rgba(26,31,58,0.25)",
+        }}>
+          {syncing
+            ? <><span style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} /> Synchronisation en cours...</>
+            : "🔄 Synchroniser avec Google Sheet"
+          }
+        </button>
+        {syncMsg && (
+          <div style={{ marginTop: "10px", padding: "12px 16px", borderRadius: "14px", fontSize: "14px", fontWeight: 600, textAlign: "center", background: syncMsg.ok ? "#eaf2e8" : "#fdf0ef", color: syncMsg.ok ? "#2d5a27" : "#c0392b" }}>
+            {syncMsg.text}
+          </div>
+        )}
       </div>
 
       {/* Zone bleu nuit */}
