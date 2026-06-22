@@ -41,7 +41,7 @@ async function getReferencedPublicIds(): Promise<Set<string>> {
   return ids;
 }
 
-// Liste toutes les images Cloudinary dans le dossier stockvault
+// Liste toutes les images Cloudinary (tous dossiers confondus)
 async function getAllCloudinaryImages(): Promise<{ public_id: string }[]> {
   const images: { public_id: string }[] = [];
   let nextCursor: string | undefined;
@@ -49,7 +49,6 @@ async function getAllCloudinaryImages(): Promise<{ public_id: string }[]> {
   do {
     const result: any = await cloudinary.api.resources({
       type:        "upload",
-      prefix:      "stockvault/",
       max_results: 500,
       next_cursor: nextCursor,
     });
