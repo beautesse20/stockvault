@@ -13,6 +13,7 @@ const APPS = [
     url:         "/dossiers",
     internal:    true,
     adminOnly:   false,
+    lightCard:   false,
     color:       "linear-gradient(135deg, #ff4d5a, #ff6b35)",
     shadow:      "rgba(255,77,90,0.35)",
   },
@@ -23,6 +24,7 @@ const APPS = [
     url:         "https://beautesse20.github.io/partstack",
     internal:    false,
     adminOnly:   false,
+    lightCard:   false,
     color:       "linear-gradient(135deg, #6366f1, #8b5cf6)",
     shadow:      "rgba(99,102,241,0.35)",
   },
@@ -33,6 +35,7 @@ const APPS = [
     url:         "https://mes-outils-de-vente.vercel.app/ventes",
     internal:    false,
     adminOnly:   true,
+    lightCard:   true,
     color:       "linear-gradient(135deg, #10b981, #059669)",
     shadow:      "rgba(16,185,129,0.35)",
   },
@@ -43,6 +46,7 @@ const APPS = [
     url:         "https://mes-outils-de-vente.vercel.app/annonces",
     internal:    false,
     adminOnly:   true,
+    lightCard:   true,
     color:       "linear-gradient(135deg, #f59e0b, #d97706)",
     shadow:      "rgba(245,158,11,0.35)",
   },
@@ -102,12 +106,36 @@ export default function LauncherPage() {
   // ── VUE IFRAME ──
   if (showApp) {
     return (
-      <div style={{ position: "fixed", inset: 0, background: "#1a1f3a", zIndex: 100, display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 20px", background: "#1a1f3a", flexShrink: 0 }}>
-          <button onClick={() => setShowApp(null)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: "18px", cursor: "pointer" }}>‹</button>
-          <span style={{ color: "white", fontSize: "14px", fontWeight: 600 }}>{showApp.nom}</span>
-        </div>
-        <iframe src={showApp.url} style={{ flex: 1, border: "none", width: "100%", height: "100%" }} allow="camera; microphone" />
+      <div style={{ position: "fixed", inset: 0, zIndex: 100 }}>
+        <iframe
+          src={showApp.url}
+          style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+          allow="camera; microphone"
+        />
+        <button
+          onClick={() => setShowApp(null)}
+          style={{
+            position: "fixed",
+            bottom: "calc(28px + env(safe-area-inset-bottom, 0px))",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#1a1f3a",
+            border: "1.5px solid rgba(255,255,255,0.2)",
+            borderRadius: "50px",
+            color: "white",
+            padding: "14px 32px",
+            fontSize: "15px",
+            fontWeight: 700,
+            cursor: "pointer",
+            zIndex: 200,
+            boxShadow: "0 4px 24px rgba(0,0,0,0.55)",
+            fontFamily: "inherit",
+            whiteSpace: "nowrap",
+            letterSpacing: "0.01em",
+          }}
+        >
+          ‹ Retour au launcher
+        </button>
       </div>
     );
   }
@@ -145,7 +173,7 @@ export default function LauncherPage() {
           }}>Déconnexion</button>
         </div>
 
-        {/* Zone bleu nuit avec les 2 apps */}
+        {/* Zone bleu nuit avec les apps */}
         <div style={{
           flex: 1,
           background: "#1a1f3a",
@@ -154,48 +182,48 @@ export default function LauncherPage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap: "20px",
+          gap: "16px",
           zIndex: 1,
         }}>
           {APPS.filter(app => !app.adminOnly || user.role === "Admin").map((app, i) => (
             <button key={i} onClick={() => handleApp(app)} style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: app.lightCard ? "white" : "rgba(255,255,255,0.05)",
+              border: app.lightCard ? "none" : "1px solid rgba(255,255,255,0.08)",
               borderRadius: "28px",
-              padding: "28px 24px",
+              padding: "20px 20px",
               display: "flex",
               alignItems: "center",
-              gap: "24px",
+              gap: "20px",
               cursor: "pointer",
               fontFamily: "inherit",
               width: "100%",
             }}>
-              {/* Icône grande */}
+              {/* Icône */}
               <div style={{
-                width: "100px",
-                height: "100px",
-                borderRadius: "28px",
+                width: app.lightCard ? "72px" : "90px",
+                height: app.lightCard ? "72px" : "90px",
+                borderRadius: "22px",
                 background: app.color,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "48px",
+                fontSize: app.lightCard ? "36px" : "44px",
                 flexShrink: 0,
-                boxShadow: `0 10px 28px ${app.shadow}`,
+                boxShadow: `0 8px 22px ${app.shadow}`,
               }}>{app.emoji}</div>
 
               {/* Texte */}
               <div style={{ flex: 1, textAlign: "left" }}>
-                <p style={{ fontSize: "24px", fontWeight: 800, color: "white", marginBottom: "6px" }}>{app.nom}</p>
-                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.4)" }}>{app.description}</p>
+                <p style={{ fontSize: "20px", fontWeight: 800, color: app.lightCard ? "#1a1f3a" : "white", marginBottom: "4px" }}>{app.nom}</p>
+                <p style={{ fontSize: "13px", color: app.lightCard ? "#6b7280" : "rgba(255,255,255,0.4)" }}>{app.description}</p>
               </div>
 
               {/* Flèche */}
               <div style={{
-                width: "44px", height: "44px", borderRadius: "14px",
-                background: "rgba(255,255,255,0.08)",
+                width: "40px", height: "40px", borderRadius: "12px",
+                background: app.lightCard ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.08)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: "rgba(255,255,255,0.4)", fontSize: "24px", flexShrink: 0,
+                color: app.lightCard ? "#9ca3af" : "rgba(255,255,255,0.4)", fontSize: "22px", flexShrink: 0,
               }}>›</div>
             </button>
           ))}
@@ -268,13 +296,13 @@ export default function LauncherPage() {
         {error && <p style={{ color: "#ff4d5a", fontSize: "12px", fontWeight: 600, margin: 0 }}>{error}</p>}
         {loading && <div style={{ width: "20px", height: "20px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />}
 
-        {/* Clavier taille fixe x2 centré */}
+        {/* Clavier */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(3, 30vw)",
-gridTemplateRows: "repeat(4, 10vh)",
-gap: "8px",
-width: "92vw",
+          gridTemplateRows: "repeat(4, 10vh)",
+          gap: "8px",
+          width: "92vw",
         }}>
           {keys.map((key, i) => (
             <button key={i}
