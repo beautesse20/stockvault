@@ -158,6 +158,25 @@ export default function ArticlePage() {
     }
   };
 
+  const handleShareImage = async (url: string, filename: string) => {
+    try {
+      const res  = await fetch(url);
+      const blob = await res.blob();
+      const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        // Fallback navigateur desktop
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") console.error(e);
+    }
+  };
+
   const nextPhoto = () => { if (article?.images) setPhotoIdx(i => (i + 1) % article.images!.length); };
   const prevPhoto = () => { if (article?.images) setPhotoIdx(i => (i - 1 + article.images!.length) % article.images!.length); };
   const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
@@ -392,7 +411,7 @@ export default function ArticlePage() {
       {lightbox && images.length > 0 && (
         <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{ position: "fixed", inset: 0, background: "black", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <button onClick={() => setLightbox(false)} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", color: "white", fontSize: "20px", cursor: "pointer", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-          <a href={`/api/download?url=${encodeURIComponent(images[photoIdx]?.url)}&filename=photo-${photoIdx + 1}.jpg`} target="_blank" rel="noopener noreferrer" style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", textDecoration: "none", zIndex: 2 }}>⬇️</a>
+          <button onClick={() => handleShareImage(images[photoIdx]?.url, `photo-${photoIdx + 1}.jpg`)} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", cursor: "pointer", zIndex: 2 }}>⬇️</button>
           <img src={medium(images[photoIdx]?.url)} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
           <div style={{ position: "absolute", bottom: "30px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
             {images.map((_: any, i: number) => (
