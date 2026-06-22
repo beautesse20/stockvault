@@ -13,7 +13,6 @@ const APPS = [
     url:         "/dossiers",
     internal:    true,
     adminOnly:   false,
-    lightCard:   false,
     color:       "linear-gradient(135deg, #ff4d5a, #ff6b35)",
     shadow:      "rgba(255,77,90,0.35)",
   },
@@ -24,7 +23,6 @@ const APPS = [
     url:         "https://beautesse20.github.io/partstack",
     internal:    false,
     adminOnly:   false,
-    lightCard:   false,
     color:       "linear-gradient(135deg, #6366f1, #8b5cf6)",
     shadow:      "rgba(99,102,241,0.35)",
   },
@@ -35,7 +33,6 @@ const APPS = [
     url:         "https://mes-outils-de-vente.vercel.app/ventes",
     internal:    false,
     adminOnly:   true,
-    lightCard:   true,
     color:       "linear-gradient(135deg, #10b981, #059669)",
     shadow:      "rgba(16,185,129,0.35)",
   },
@@ -46,7 +43,6 @@ const APPS = [
     url:         "https://mes-outils-de-vente.vercel.app/annonces",
     internal:    false,
     adminOnly:   true,
-    lightCard:   true,
     color:       "linear-gradient(135deg, #f59e0b, #d97706)",
     shadow:      "rgba(245,158,11,0.35)",
   },
@@ -168,10 +164,10 @@ export default function LauncherPage() {
         }}>
           {APPS.filter(app => !app.adminOnly || user.role === "Admin").map((app, i) => (
             <button key={i} onClick={() => handleApp(app)} style={{
-              background: app.lightCard ? "white" : "rgba(255,255,255,0.05)",
-              border: app.lightCard ? "none" : "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: "28px",
-              padding: "20px 20px",
+              padding: "20px",
               display: "flex",
               alignItems: "center",
               gap: "20px",
@@ -179,32 +175,23 @@ export default function LauncherPage() {
               fontFamily: "inherit",
               width: "100%",
             }}>
-              {/* Icône */}
               <div style={{
-                width: app.lightCard ? "72px" : "90px",
-                height: app.lightCard ? "72px" : "90px",
-                borderRadius: "22px",
-                background: app.color,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: app.lightCard ? "36px" : "44px",
-                flexShrink: 0,
+                width: "90px", height: "90px", borderRadius: "22px",
+                background: app.color, display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: "44px", flexShrink: 0,
                 boxShadow: `0 8px 22px ${app.shadow}`,
               }}>{app.emoji}</div>
 
-              {/* Texte */}
               <div style={{ flex: 1, textAlign: "left" }}>
-                <p style={{ fontSize: "20px", fontWeight: 800, color: app.lightCard ? "#1a1f3a" : "white", marginBottom: "4px" }}>{app.nom}</p>
-                <p style={{ fontSize: "13px", color: app.lightCard ? "#6b7280" : "rgba(255,255,255,0.4)" }}>{app.description}</p>
+                <p style={{ fontSize: "20px", fontWeight: 800, color: "white", marginBottom: "4px" }}>{app.nom}</p>
+                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>{app.description}</p>
               </div>
 
-              {/* Flèche */}
               <div style={{
                 width: "40px", height: "40px", borderRadius: "12px",
-                background: app.lightCard ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.08)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: app.lightCard ? "#9ca3af" : "rgba(255,255,255,0.4)", fontSize: "22px", flexShrink: 0,
+                color: "rgba(255,255,255,0.4)", fontSize: "22px", flexShrink: 0,
               }}>›</div>
             </button>
           ))}
