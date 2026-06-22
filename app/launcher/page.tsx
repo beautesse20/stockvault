@@ -106,36 +106,17 @@ export default function LauncherPage() {
   // ── VUE IFRAME ──
   if (showApp) {
     return (
-      <div style={{ position: "fixed", inset: 0, zIndex: 100 }}>
-        <iframe
-          src={showApp.url}
-          style={{ width: "100%", height: "100%", border: "none", display: "block" }}
-          allow="camera; microphone"
-        />
-        <button
-          onClick={() => setShowApp(null)}
-          style={{
-            position: "fixed",
-            bottom: "calc(28px + env(safe-area-inset-bottom, 0px))",
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "#1a1f3a",
-            border: "1.5px solid rgba(255,255,255,0.2)",
-            borderRadius: "50px",
-            color: "white",
-            padding: "14px 32px",
-            fontSize: "15px",
-            fontWeight: 700,
-            cursor: "pointer",
-            zIndex: 200,
-            boxShadow: "0 4px 24px rgba(0,0,0,0.55)",
-            fontFamily: "inherit",
-            whiteSpace: "nowrap",
-            letterSpacing: "0.01em",
-          }}
-        >
-          ‹ Retour au launcher
-        </button>
+      <div style={{ position: "fixed", inset: 0, background: "#1a1f3a", zIndex: 100, display: "flex", flexDirection: "column" }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: "12px",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
+          paddingBottom: "12px", paddingLeft: "16px", paddingRight: "16px",
+          background: "#1a1f3a", flexShrink: 0,
+        }}>
+          <button onClick={() => setShowApp(null)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: "20px", cursor: "pointer", fontFamily: "inherit" }}>‹</button>
+          <span style={{ color: "white", fontSize: "14px", fontWeight: 600 }}>{showApp.nom}</span>
+        </div>
+        <iframe src={showApp.url} style={{ flex: 1, border: "none", width: "100%" }} allow="camera; microphone" />
       </div>
     );
   }
