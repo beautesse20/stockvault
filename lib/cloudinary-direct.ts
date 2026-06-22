@@ -5,7 +5,7 @@
 const CLOUD_NAME    = "di6qnlcgy";
 const UPLOAD_PRESET = "sjfvdj53";
 
-export async function uploadToCloudinary(file: File): Promise<string> {
+export async function uploadToCloudinary(file: File): Promise<{ url: string; publicId: string }> {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("upload_preset", UPLOAD_PRESET);
@@ -19,5 +19,5 @@ export async function uploadToCloudinary(file: File): Promise<string> {
   if (!res.ok || !data.secure_url) {
     throw new Error(data?.error?.message || "Upload Cloudinary échoué");
   }
-  return data.secure_url as string;
+  return { url: data.secure_url as string, publicId: data.public_id as string };
 }

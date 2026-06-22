@@ -114,8 +114,8 @@ export default function ArticlePage() {
       try {
         await Promise.all(toUpload.map(async (file) => {
           const compressed = await compressImage(file);
-          const url = await uploadToCloudinary(compressed);
-          await appendArticleImage(id, { url, filename: file.name });
+          const { url, publicId } = await uploadToCloudinary(compressed);
+          await appendArticleImage(id, { url, filename: file.name, publicId });
         }));
         await fetchData();
       } finally {

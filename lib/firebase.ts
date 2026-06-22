@@ -41,7 +41,7 @@ export type Article = {
   coque?:      string;
   batterie?:   string;
   defaut?:     string;
-  images?:     { url: string; filename: string }[];
+  images?:     { url: string; filename: string; publicId?: string }[];
   dossierId?:  string;
   masquerDuSite?: boolean;
   vendu?:         boolean;
@@ -124,7 +124,7 @@ export async function updateArticle(id: string, fields: Partial<Article>): Promi
 // Ajoute une image SANS écraser les autres (atomique, sûr en parallèle)
 export async function appendArticleImage(
   id: string,
-  image: { url: string; filename: string }
+  image: { url: string; filename: string; publicId?: string }
 ): Promise<void> {
   await updateDoc(doc(db, "articles", id), {
     images:    arrayUnion(image),

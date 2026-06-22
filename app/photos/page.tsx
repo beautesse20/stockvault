@@ -97,8 +97,8 @@ export default function PhotosMassePage() {
   const processItem = async (item: { articleId: string; file: File }) => {
     try {
       const compressed = await compressImage(item.file);
-      const url        = await uploadToCloudinary(compressed);
-      const image      = { url, filename: item.file.name };
+      const { url, publicId } = await uploadToCloudinary(compressed);
+      const image      = { url, filename: item.file.name, publicId };
       await appendArticleImage(item.articleId, image);
 
       setImagesByArticle(prev => ({
