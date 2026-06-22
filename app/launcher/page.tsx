@@ -12,6 +12,7 @@ const APPS = [
     emoji:       "📦",
     url:         "/dossiers",
     internal:    true,
+    adminOnly:   false,
     color:       "linear-gradient(135deg, #ff4d5a, #ff6b35)",
     shadow:      "rgba(255,77,90,0.35)",
   },
@@ -21,8 +22,29 @@ const APPS = [
     emoji:       "🔧",
     url:         "https://beautesse20.github.io/partstack",
     internal:    false,
+    adminOnly:   false,
     color:       "linear-gradient(135deg, #6366f1, #8b5cf6)",
     shadow:      "rgba(99,102,241,0.35)",
+  },
+  {
+    nom:         "Suivi des ventes",
+    description: "Enregistrer une vente · Dashboard",
+    emoji:       "🛒",
+    url:         "https://mes-outils-de-vente.vercel.app/ventes",
+    internal:    false,
+    adminOnly:   true,
+    color:       "linear-gradient(135deg, #10b981, #059669)",
+    shadow:      "rgba(16,185,129,0.35)",
+  },
+  {
+    nom:         "Générateur d'annonces",
+    description: "LBC · Vinted · Rakuten",
+    emoji:       "✍️",
+    url:         "https://mes-outils-de-vente.vercel.app/annonces",
+    internal:    false,
+    adminOnly:   true,
+    color:       "linear-gradient(135deg, #f59e0b, #d97706)",
+    shadow:      "rgba(245,158,11,0.35)",
   },
 ];
 
@@ -31,7 +53,7 @@ export default function LauncherPage() {
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser]       = useState<any>(null);
-  const [showApp, setShowApp] = useState<string | null>(null);
+  const [showApp, setShowApp] = useState<{ url: string; nom: string } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -69,7 +91,7 @@ export default function LauncherPage() {
 
   const handleApp = (app: typeof APPS[0]) => {
     if (app.internal) router.push(app.url);
-    else setShowApp(app.url);
+    else setShowApp({ url: app.url, nom: app.nom });
   };
 
   const handleLogout = () => {
@@ -83,9 +105,9 @@ export default function LauncherPage() {
       <div style={{ position: "fixed", inset: 0, background: "#1a1f3a", zIndex: 100, display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 20px", background: "#1a1f3a", flexShrink: 0 }}>
           <button onClick={() => setShowApp(null)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: "18px", cursor: "pointer" }}>‹</button>
-          <span style={{ color: "white", fontSize: "14px", fontWeight: 600 }}>PartStack</span>
+          <span style={{ color: "white", fontSize: "14px", fontWeight: 600 }}>{showApp.nom}</span>
         </div>
-        <iframe src={showApp} style={{ flex: 1, border: "none", width: "100%", height: "100%" }} allow="camera; microphone" />
+        <iframe src={showApp.url} style={{ flex: 1, border: "none", width: "100%", height: "100%" }} allow="camera; microphone" />
       </div>
     );
   }
@@ -135,7 +157,7 @@ export default function LauncherPage() {
           gap: "20px",
           zIndex: 1,
         }}>
-          {APPS.map((app, i) => (
+          {APPS.filter(app => !app.adminOnly || user.role === "Admin").map((app, i) => (
             <button key={i} onClick={() => handleApp(app)} style={{
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.08)",
