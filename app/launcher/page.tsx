@@ -67,6 +67,16 @@ const APPS = [
     shadow:      "rgba(99,102,241,0.35)",
   },
   {
+    nom:         "Rentabilité par lot",
+    description: "Coût · revenu · marge par lot",
+    emoji:       "💰",
+    url:         "https://mes-outils-de-vente.vercel.app/rentabilite",
+    internal:    false,
+    adminOnly:   true,
+    color:       "linear-gradient(135deg, #10b981, #047857)",
+    shadow:      "rgba(16,185,129,0.35)",
+  },
+  {
     nom:         "Mon Conseiller",
     description: "Assistant qui connaît ton métier",
     emoji:       "🧠",
