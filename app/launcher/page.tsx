@@ -105,6 +105,17 @@ export default function LauncherPage() {
       const annApp = APPS.find(a => a.nom === "Générateur d'annonces");
       if (annApp) setShowApp({ url: annApp.url, nom: annApp.nom });
     }
+    // Depuis une fiche produit : "Enregistrer la vente" → ouvre Suivi des ventes
+    // avec l'article pré-sélectionné (préremplissage par URL, pas de handshake).
+    if (p.get("app") === "ventes" && session?.role === "Admin") {
+      const v = APPS.find(a => a.nom === "Suivi des ventes");
+      if (v) {
+        const ref = p.get("ref") || "", nom = p.get("nom") || "", type = p.get("type") || "";
+        const prefill = ref ? `${ref}${nom ? " / " + nom : ""}` : "";
+        const url = v.url + (prefill ? `?prefill=${encodeURIComponent(prefill)}&type=${encodeURIComponent(type)}` : "");
+        setShowApp({ url, nom: v.nom });
+      }
+    }
   };
 
   useEffect(() => {

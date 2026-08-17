@@ -612,6 +612,10 @@ export default function ArticlePage() {
               {isAdmin && (
                 <button onClick={() => { setAnnPlats([]); setAnnPrecision(""); setAnnResults(null); setAnnErr(""); setPrixReel(null); setPrixErr(false); setPrixLoading(false); setPrixLbc(null); setPrixLbcErr(false); setPrixLbcLoading(false); setPrixCanada(null); setPrixCanadaErr(false); setPrixCanadaLoading(false); setShowAnnonce(true); }} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(245,158,11,0.35)" }}>✍️ Rédiger une annonce</button>
               )}
+              {/* Enregistrer la vente — Admin : ouvre Suivi des ventes avec l'article pré-sélectionné */}
+              {isAdmin && article && (
+                <button onClick={() => router.push(`/launcher?app=ventes&ref=${encodeURIComponent(article.ref || "")}&nom=${encodeURIComponent(article.nom || "")}&type=${encodeURIComponent(article.type || "")}`)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #10b981, #059669)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(16,185,129,0.35)" }}>💵 Enregistrer la vente</button>
+              )}
               {/* Partager — envoie un lien vers la fiche publique via le menu natif */}
               <button onClick={handlePartager} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(99,102,241,0.35)" }}>📤 Partager</button>
               {/* Déplacer — tous les utilisateurs, mais dossiers filtrés */}

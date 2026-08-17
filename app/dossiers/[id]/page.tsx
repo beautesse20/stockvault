@@ -14,6 +14,9 @@ export default function DossierPage() {
   const [loading, setLoading]   = useState(true);
   const [filtre, setFiltre]     = useState("Tous");
   const [isAdmin, setIsAdmin]   = useState(false);
+  const [vue, setVue]           = useState<"mosaique" | "liste" | "compacte">("mosaique");
+  useEffect(() => { const v = typeof window !== "undefined" && localStorage.getItem("sv_vue_articles"); if (v === "liste" || v === "compacte" || v === "mosaique") setVue(v); }, []);
+  const changerVue = (v: "mosaique" | "liste" | "compacte") => { setVue(v); try { localStorage.setItem("sv_vue_articles", v); } catch {} };
 
   // Sélecteur d'ajout en masse
   const [showPicker, setShowPicker]   = useState(false);
@@ -172,12 +175,24 @@ export default function DossierPage() {
 
       {/* Zone bleu nuit */}
       <div style={{ flex: 1, background: "#1a1f3a", borderRadius: "0 60px 0 0", paddingTop: "40px", paddingLeft: "16px", paddingRight: "16px", paddingBottom: "100px", position: "relative", zIndex: 1 }}>
+        {/* Sélecteur de vue : mosaïque / liste / compacte (persisté) */}
+        {articlesFiltres.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "6px", marginBottom: "14px" }}>
+            {([["mosaique", "▦", "Mosaïque"], ["liste", "☰", "Liste"], ["compacte", "≣", "Compacte"]] as const).map(([v, ic, t]) => (
+              <button key={v} title={t} onClick={() => changerVue(v)} style={{ width: "40px", height: "34px", borderRadius: "10px", cursor: "pointer", fontSize: "16px", fontFamily: "inherit", border: "none", background: vue === v ? "#ff4d5a" : "rgba(255,255,255,0.07)", color: vue === v ? "white" : "rgba(255,255,255,0.5)" }}>{ic}</button>
+            ))}
+          </div>
+        )}
+
         {articlesFiltres.length === 0 && (
           <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", paddingTop: "60px" }}>
             <div style={{ fontSize: "48px", marginBottom: "12px" }}>📦</div>
             <p>Aucun article</p>
           </div>
         )}
+
+        {/* MOSAÏQUE (présentation par défaut) */}
+        {vue === "mosaique" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           {articlesFiltres.map((a, i) => (
             <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden", cursor: "pointer" }}>
@@ -202,6 +217,38 @@ export default function DossierPage() {
             </div>
           ))}
         </div>
+        )}
+
+        {/* LISTE : miniature + réf/nom + prix (densité moyenne) */}
+        {vue === "liste" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {articlesFiltres.map((a, i) => (
+            <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{ display: "flex", alignItems: "center", gap: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "14px", padding: "8px 12px", cursor: "pointer" }}>
+              <div style={{ width: "48px", height: "48px", borderRadius: "10px", overflow: "hidden", flexShrink: 0, background: a.images && a.images.length ? "transparent" : gradients[i % gradients.length], display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
+                {a.images && a.images.length ? <img src={thumb(a.images[0].url)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "📷"}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", color: "#ff4d5a", marginBottom: "2px" }}>{a.ref}</p>
+                <p style={{ fontSize: "13px", fontWeight: 700, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.nom}</p>
+              </div>
+              <p style={{ fontSize: "14px", fontWeight: 800, color: "#ff8c42", flexShrink: 0 }}>{a.prix ? `${a.prix} €` : "—"}</p>
+            </div>
+          ))}
+        </div>
+        )}
+
+        {/* COMPACTE : une ligne par article, sans photo (densité max, scan rapide) */}
+        {vue === "compacte" && (
+        <div>
+          {articlesFiltres.map(a => (
+            <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "9px 6px", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer" }}>
+              <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: "#ff4d5a", width: "76px", flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.ref}</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: "13px", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.nom}</span>
+              <span style={{ fontSize: "13px", fontWeight: 800, color: "#ff8c42", flexShrink: 0 }}>{a.prix ? `${a.prix} €` : "—"}</span>
+            </div>
+          ))}
+        </div>
+        )}
       </div>
 
       {/* Bouton ajouter — Admin seulement */}
