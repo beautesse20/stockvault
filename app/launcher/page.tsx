@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { loginByPin } from "@/lib/firebase";
 import { saveSession, getSession } from "@/lib/auth";
@@ -15,6 +15,16 @@ const APPS = [
     adminOnly:   false,
     color:       "linear-gradient(135deg, #ff4d5a, #ff6b35)",
     shadow:      "rgba(255,77,90,0.35)",
+  },
+  {
+    nom:         "Recherche",
+    description: "Texte · photo · voix — stock, pièces, ventes",
+    emoji:       "🔎",
+    url:         "https://mes-outils-de-vente.vercel.app/recherche",
+    internal:    false,
+    adminOnly:   true,
+    color:       "linear-gradient(135deg, #0ea5e9, #2563eb)",
+    shadow:      "rgba(14,165,233,0.35)",
   },
   {
     nom:         "PartStack",
@@ -46,6 +56,26 @@ const APPS = [
     color:       "linear-gradient(135deg, #f59e0b, #d97706)",
     shadow:      "rgba(245,158,11,0.35)",
   },
+  {
+    nom:         "Analyse de lot",
+    description: "Valeur de revente · prix max d'achat",
+    emoji:       "📊",
+    url:         "https://mes-outils-de-vente.vercel.app/analyse-lot",
+    internal:    false,
+    adminOnly:   true,
+    color:       "linear-gradient(135deg, #6366f1, #4f46e5)",
+    shadow:      "rgba(99,102,241,0.35)",
+  },
+  {
+    nom:         "Mon Conseiller",
+    description: "Assistant qui connaît ton métier",
+    emoji:       "🧠",
+    url:         "https://mes-outils-de-vente.vercel.app/assistant",
+    internal:    false,
+    adminOnly:   true,
+    color:       "linear-gradient(135deg, #8b5cf6, #6366f1)",
+    shadow:      "rgba(139,92,246,0.35)",
+  },
 ];
 
 export default function LauncherPage() {
@@ -54,11 +84,56 @@ export default function LauncherPage() {
   const [loading, setLoading] = useState(false);
   const [user, setUser]       = useState<any>(null);
   const [showApp, setShowApp] = useState<{ url: string; nom: string } | null>(null);
+  const iframeRef   = useRef<HTMLIFrameElement>(null);
+  const pendingPrefill = useRef<any>(null);
   const router = useRouter();
+
+  // Ouvre l'annonces app dès que user et params URL sont disponibles
+  const checkAndOpenAnnonces = (session: any) => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("app") === "annonces" && session?.role === "Admin") {
+      const annApp = APPS.find(a => a.nom === "Générateur d'annonces");
+      if (annApp) setShowApp({ url: annApp.url, nom: annApp.nom });
+    }
+  };
 
   useEffect(() => {
     const session = getSession();
-    if (session) setUser(session);
+    if (session) {
+      setUser(session);
+      checkAndOpenAnnonces(session);
+    }
+
+    // Écoute le signal "prêt" de la page annonces
+    // On lit window.location.search ICI (pas dans useEffect) pour éviter le cache du router Next.js
+    const handleReady = (event: MessageEvent) => {
+      // Demande d'aller au stock depuis l'app d'annonces (iframe) → on ferme
+      // l'iframe et on ouvre la 1ère page de StockVault (pas le launcher).
+      if (event.data?.type === "GO_TO_STOCK") {
+        setShowApp(null);
+        router.push("/dossiers");
+        return;
+      }
+      // Depuis la Recherche (iframe) : ouvrir la fiche produit dans StockVault.
+      if (event.data?.type === "GO_TO_ARTICLE" && event.data.id) {
+        setShowApp(null);
+        router.push("/articles/" + event.data.id);
+        return;
+      }
+      if (event.data?.type !== "ANNONCES_READY") return;
+      if (!iframeRef.current?.contentWindow) return;
+      const p   = new URLSearchParams(window.location.search);
+      const ref  = p.get("ref");
+      const nom  = p.get("nom");
+      const type = p.get("type");
+      if (p.get("app") !== "annonces" || !ref || !type) return;
+      iframeRef.current.contentWindow.postMessage(
+        { type: "STOCKVAULT_PREFILL", ref, nom: nom || "", articleType: type },
+        "*"
+      );
+    };
+    window.addEventListener("message", handleReady);
+    return () => window.removeEventListener("message", handleReady);
   }, []);
 
   const handlePress = async (val: string) => {
@@ -112,7 +187,12 @@ export default function LauncherPage() {
           <button onClick={() => setShowApp(null)} style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "none", color: "white", fontSize: "20px", cursor: "pointer", fontFamily: "inherit" }}>‹</button>
           <span style={{ color: "white", fontSize: "14px", fontWeight: 600 }}>{showApp.nom}</span>
         </div>
-        <iframe src={showApp.url} style={{ flex: 1, border: "none", width: "100%" }} allow="camera; microphone" />
+        <iframe
+          ref={iframeRef}
+          src={showApp.url}
+          style={{ flex: 1, border: "none", width: "100%" }}
+          allow="camera; microphone"
+        />
       </div>
     );
   }

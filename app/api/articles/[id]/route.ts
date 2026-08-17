@@ -45,9 +45,13 @@ export async function DELETE(
     // Supprimer de Firebase
     await deleteArticle(id);
 
-    // Griser la ligne dans le Sheet via Apps Script
+    // Griser la ligne dans le Sheet via Apps Script + noter la suppression.
+    // Le texte est écrit dans la colonne P/H → grise la ligne ET empêche que
+    // l'article soit recréé au prochain Sync (les lignes "vendues" sont ignorées).
     if (ref && process.env.APPS_SCRIPT_URL) {
-      const url = `${process.env.APPS_SCRIPT_URL}?action=griser&ref=${encodeURIComponent(ref)}`;
+      const dateFr = new Date().toLocaleDateString("fr-FR");
+      const note   = `Supprimé depuis l'app / ${dateFr}`;
+      const url    = `${process.env.APPS_SCRIPT_URL}?action=griser&ref=${encodeURIComponent(ref)}&note=${encodeURIComponent(note)}`;
       await fetch(url).catch(e => console.error("Erreur Apps Script:", e));
     }
 

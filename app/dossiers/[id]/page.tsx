@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
 import { assignArticlesToDossier } from "@/lib/firebase";
 import { thumb } from "@/lib/img";
+import { getCache, setCache, isStale } from "@/lib/cache";
 
 export default function DossierPage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -35,23 +36,37 @@ export default function DossierPage() {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  const keyArts = `articles:dossier:${id}`;
+
+  const appliquer = (dataD: any, dataA: any) => {
+    const tousDossiers: Dossier[] = dataD?.dossiers || [];
+    setAllDossiers(tousDossiers);
+    setDossier(tousDossiers.find((d: Dossier) => d.id === id) || null);
+    setArticles(dataA?.articles || []);
+  };
+
+  const revalider = async () => {
     try {
       const [resD, resA] = await Promise.all([
         fetch("/api/dossiers", { cache: "no-store" }),
         fetch(`/api/articles?dossierId=${id}`, { cache: "no-store" }),
       ]);
-      const dataD = await resD.json();
-      const dataA = await resA.json();
-      const tousDossiers: Dossier[] = dataD.dossiers || [];
-      setAllDossiers(tousDossiers);
-      setDossier(tousDossiers.find((d: Dossier) => d.id === id) || null);
-      setArticles(dataA.articles || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
+      const dataD = await resD.json(); const dataA = await resA.json();
+      setCache("dossiers", dataD); setCache(keyArts, dataA);
+      appliquer(dataD, dataA);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchData = async () => {
+    const dataD = getCache<any>("dossiers");
+    const dataA = getCache<any>(keyArts);
+    if (dataD && dataA) {
+      appliquer(dataD, dataA);
       setLoading(false);
+      if (isStale("dossiers") || isStale(keyArts)) revalider();
+      return;
     }
+    try { await revalider(); } finally { setLoading(false); }
   };
 
   const openPicker = async () => {

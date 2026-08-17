@@ -107,6 +107,19 @@ export async function getArticles(dossierId?: string): Promise<Article[]> {
     .filter(a => !a.vendu);
 }
 
+// Articles vendus pendant le MOIS courant (pour le dashboard).
+// Renvoie une version légère {dossierId} — le filtrage par dossier se fait côté appelant.
+export async function getVendusCeMois(): Promise<{ dossierId?: string }[]> {
+  const now = new Date();
+  const startISO = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const q = query(collection(db, "articles"), where("vendu", "==", true));
+  const snap = await getDocs(q);
+  return snap.docs
+    .map(d => d.data() as any)
+    .filter(a => a.vendedAt && a.vendedAt >= startISO)
+    .map(a => ({ dossierId: a.dossierId }));
+}
+
 export async function getArticle(id: string): Promise<Article> {
   const snap = await getDoc(doc(db, "articles", id));
   if (!snap.exists()) throw new Error("Article introuvable");

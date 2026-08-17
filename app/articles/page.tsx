@@ -5,14 +5,15 @@ import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
 import { thumb } from "@/lib/img";
-import { getCache, setCache, invalidateCache } from "@/lib/cache";
+import { getCache, setCache, invalidateCache, isStale } from "@/lib/cache";
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [dossiers, setDossiers] = useState<Dossier[]>([]);
   const [loading, setLoading]   = useState(true);
-  const [filtre, setFiltre]     = useState("Tous");
-  const [search, setSearch]     = useState("");
+  const [filtre, setFiltre]         = useState(() => (typeof window !== "undefined" ? sessionStorage.getItem("art-filtre") || "Tous" : "Tous"));
+  const [search, setSearch]         = useState(() => (typeof window !== "undefined" ? sessionStorage.getItem("art-search") || "" : ""));
+  const [dossierFiltre, setDossierFiltre] = useState(() => (typeof window !== "undefined" ? sessionStorage.getItem("art-dossier") || "" : ""));
   const [isAdmin, setIsAdmin]             = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected]           = useState<string[]>([]);
@@ -26,28 +27,38 @@ export default function ArticlesPage() {
     fetchData(user);
   }, []);
 
-  const fetchData = async (user: any, force = false) => {
+  const appliquer = (user: any, dataA: any, dataD: any) => {
+    const allDossiers: Dossier[] = dataD?.dossiers || [];
+    const allArticles: Article[] = dataA?.articles || [];
+    setDossiers(allDossiers);
+    setArticles(user.role === "Admin" ? allArticles : allArticles.filter(a => user.dossierIds?.includes(a.dossierId || "")));
+  };
+
+  const revalider = async (user: any) => {
     try {
-      let dataA = !force && getCache<any>("articles");
-      let dataD = !force && getCache<any>("dossiers");
-      if (!dataA || !dataD) {
-        const [resA, resD] = await Promise.all([
-          !dataA ? fetch("/api/articles", { cache: "no-store" }) : Promise.resolve(null),
-          !dataD ? fetch("/api/dossiers", { cache: "no-store" }) : Promise.resolve(null),
-        ]);
-        if (resA) { dataA = await resA.json(); setCache("articles", dataA); }
-        if (resD) { dataD = await resD.json(); setCache("dossiers", dataD); }
-      }
-      const allDossiers: Dossier[] = dataD.dossiers || [];
-      const allArticles: Article[] = dataA.articles || [];
-      setDossiers(allDossiers);
-      if (user.role === "Admin") {
-        setArticles(allArticles);
-      } else {
-        setArticles(allArticles.filter(a => user.dossierIds?.includes(a.dossierId || "")));
-      }
-    } catch (e) {
-      console.error(e);
+      const [resA, resD] = await Promise.all([
+        fetch("/api/articles", { cache: "no-store" }),
+        fetch("/api/dossiers", { cache: "no-store" }),
+      ]);
+      const dataA = await resA.json(); const dataD = await resD.json();
+      setCache("articles", dataA); setCache("dossiers", dataD);
+      appliquer(user, dataA, dataD);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchData = async (user: any, force = false) => {
+    const cachedA = !force && getCache<any>("articles");
+    const cachedD = !force && getCache<any>("dossiers");
+    // Cache présent → on affiche tout de suite (pas de spinner) puis on rafraîchit en fond si périmé.
+    if (cachedA && cachedD) {
+      appliquer(user, cachedA, cachedD);
+      setLoading(false);
+      if (isStale("articles") || isStale("dossiers")) revalider(user);
+      return;
+    }
+    // Pas de cache → 1er chargement avec spinner.
+    try {
+      await revalider(user);
     } finally {
       setLoading(false);
     }
@@ -79,14 +90,19 @@ export default function ArticlesPage() {
     }
   };
 
-  const filtres = ["Tous", "Téléphone", "Divers", "Sans photo", "Sans dossier"];
+  const savePref = (key: string, val: string) => { try { sessionStorage.setItem(key, val); } catch {} };
+
+  const filtres = ["Tous", "Téléphone", "Divers", "Avec photo", "Sans photo", "Masqué", "Sans dossier"];
   const articlesFiltres = articles
     .filter(a => {
       if (filtre === "Tous")          return true;
       if (filtre === "Sans photo")    return !a.images || a.images.length === 0;
+      if (filtre === "Avec photo")    return a.images && a.images.length > 0;
       if (filtre === "Sans dossier")  return !a.dossierId;
+      if (filtre === "Masqué")        return !!(a as any).masquerDuSite;
       return a.type === filtre;
     })
+    .filter(a => !dossierFiltre || a.dossierId === dossierFiltre)
     .filter(a => !search || a.nom.toLowerCase().includes(search.toLowerCase()) || a.ref.toLowerCase().includes(search.toLowerCase()));
 
   const gradients = [
@@ -118,13 +134,22 @@ export default function ArticlesPage() {
         <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "16px" }}>{articles.length} article{articles.length > 1 ? "s" : ""}</p>
         <div style={{ background: "white", borderRadius: "14px", padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", boxShadow: "0 2px 8px rgba(26,31,58,0.08)", marginBottom: "14px" }}>
           <span style={{ color: "#8892b0" }}>🔍</span>
-          <input type="text" placeholder="Rechercher un article ou une réf..." value={search} onChange={e => setSearch(e.target.value)} style={{ background: "none", border: "none", outline: "none", fontSize: "13px", color: "#1a1f3a", flex: 1, fontFamily: "inherit" }} />
+          <input type="text" placeholder="Rechercher un article ou une réf..." value={search} onChange={e => { setSearch(e.target.value); savePref("art-search", e.target.value); }} style={{ background: "none", border: "none", outline: "none", fontSize: "13px", color: "#1a1f3a", flex: 1, fontFamily: "inherit" }} />
+          {search && <button onClick={() => { setSearch(""); savePref("art-search", ""); }} style={{ border: "none", background: "rgba(26,31,58,0.08)", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", fontSize: "11px", color: "#1a1f3a" }}>✕</button>}
         </div>
-        <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
+        <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "2px" }}>
           {filtres.map(f => (
-            <button key={f} onClick={() => setFiltre(f)} style={{ padding: "7px 14px", borderRadius: "50px", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit", background: filtre === f ? "#ff4d5a" : "white", color: filtre === f ? "white" : "#8892b0", border: filtre === f ? "none" : "1px solid #e2e5f0", boxShadow: filtre === f ? "0 4px 12px rgba(255,77,90,0.3)" : "0 2px 6px rgba(26,31,58,0.06)" }}>{f}</button>
+            <button key={f} onClick={() => { setFiltre(f); savePref("art-filtre", f); }} style={{ padding: "7px 14px", borderRadius: "50px", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit", background: filtre === f ? "#ff4d5a" : "white", color: filtre === f ? "white" : "#8892b0", border: filtre === f ? "none" : "1px solid #e2e5f0", boxShadow: filtre === f ? "0 4px 12px rgba(255,77,90,0.3)" : "0 2px 6px rgba(26,31,58,0.06)" }}>{f}</button>
           ))}
         </div>
+        {dossiers.length > 0 && (
+          <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "2px", marginTop: "8px" }}>
+            <button onClick={() => { setDossierFiltre(""); savePref("art-dossier", ""); }} style={{ padding: "7px 14px", borderRadius: "50px", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit", background: !dossierFiltre ? "#1a1f3a" : "white", color: !dossierFiltre ? "white" : "#8892b0", border: !dossierFiltre ? "none" : "1px solid #e2e5f0", boxShadow: !dossierFiltre ? "0 4px 12px rgba(26,31,58,0.25)" : "0 2px 6px rgba(26,31,58,0.06)" }}>📂 Tous</button>
+            {dossiers.map(d => (
+              <button key={d.id} onClick={() => { setDossierFiltre(d.id); savePref("art-dossier", d.id); }} style={{ padding: "7px 14px", borderRadius: "50px", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit", background: dossierFiltre === d.id ? "#1a1f3a" : "white", color: dossierFiltre === d.id ? "white" : "#8892b0", border: dossierFiltre === d.id ? "none" : "1px solid #e2e5f0", boxShadow: dossierFiltre === d.id ? "0 4px 12px rgba(26,31,58,0.25)" : "0 2px 6px rgba(26,31,58,0.06)" }}>{d.nom}</button>
+            ))}
+          </div>
+        )}
         {isAdmin && (
           <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end" }}>
             <button onClick={() => selectionMode ? annulerSelection() : setSelectionMode(true)} style={{ padding: "7px 14px", borderRadius: "50px", fontSize: "11px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", border: "1px solid #e2e5f0", background: selectionMode ? "#1a1f3a" : "white", color: selectionMode ? "white" : "#1a1f3a", boxShadow: "0 2px 6px rgba(26,31,58,0.06)" }}>{selectionMode ? "✕ Annuler" : "☑️ Sélectionner"}</button>

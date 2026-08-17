@@ -8,7 +8,7 @@ import { thumb, medium } from "@/lib/img";
 import { compressImage } from "@/lib/compress";
 import { uploadToCloudinary } from "@/lib/cloudinary-direct";
 import { appendArticleImage } from "@/lib/firebase";
-import { invalidateCache } from "@/lib/cache";
+import { getCache, setCache, invalidateCache, isStale } from "@/lib/cache";
 
 export default function ArticlePage() {
   const [article, setArticle]     = useState<Article | null>(null);
@@ -25,6 +25,31 @@ export default function ArticlePage() {
   const [userSession, setUserSession] = useState<any>(null);
   const [visSaving, setVisSaving] = useState(false);
   const [modal, setModal]         = useState<null | { message: string; onConfirm?: () => void }>(null);
+  // Rédaction d'annonce inline
+  const [showAnnonce, setShowAnnonce]   = useState(false);
+  const [annPlats, setAnnPlats]         = useState<string[]>([]);
+  const [annPrecision, setAnnPrecision] = useState("");
+  const [annLoading, setAnnLoading]     = useState(false);
+  const [annResults, setAnnResults]     = useState<any[] | null>(null);
+  const [annErr, setAnnErr]             = useState("");
+  const [annSaved, setAnnSaved]         = useState<any[]>([]);
+  const [copiedKey, setCopiedKey]       = useState("");
+  // Suivi "mis en ligne" (rotation)
+  const [listings, setListings]         = useState<any[]>([]);
+  const [postePlats, setPostePlats]     = useState<string[]>([]);
+  const [posteSaved, setPosteSaved]     = useState(false);
+  const [posteBusy, setPosteBusy]       = useState(false);
+  // Prix réel (recherche web, asynchrone)
+  const [prixReel, setPrixReel]         = useState<any | null>(null);
+  const [prixLoading, setPrixLoading]   = useState(false);
+  const [prixErr, setPrixErr]           = useState(false);
+  const [prixLbc, setPrixLbc]           = useState<any | null>(null);
+  const [prixLbcLoading, setPrixLbcLoading] = useState(false);
+  const [prixLbcErr, setPrixLbcErr]     = useState(false);
+  const [prixCanada, setPrixCanada]     = useState<any | null>(null);
+  const [prixCanadaLoading, setPrixCanadaLoading] = useState(false);
+  const [prixCanadaErr, setPrixCanadaErr] = useState(false);
+  const [downloadingAll, setDownloadingAll] = useState(false);
   const fileRef                   = useRef<HTMLInputElement>(null);
   const touchStartX               = useRef(0);
   const router                    = useRouter();
@@ -39,30 +64,167 @@ export default function ArticlePage() {
     fetchData(user);
   }, []);
 
-  const fetchData = async (user?: any) => {
-    try {
-      const currentUser = user || userSession;
-      const [resA, resD] = await Promise.all([
-        fetch(`/api/articles/${id}`, { cache: "no-store" }),
-        fetch("/api/dossiers", { cache: "no-store" }),
-      ]);
-      const dataA = await resA.json();
-      const dataD = await resD.json();
-      setArticle(dataA.article);
-      setForm(dataA.article);
+  // Navigation clavier quand on est en plein écran (lightbox) :
+  // flèches ← → pour changer de photo, Échap pour fermer.
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      const n = article?.images?.length || 0;
+      if (e.key === "Escape") { setLightbox(false); return; }
+      if (n < 2) return;
+      if (e.key === "ArrowRight") setPhotoIdx(i => (i + 1) % n);
+      else if (e.key === "ArrowLeft") setPhotoIdx(i => (i - 1 + n) % n);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox, article]);
 
-      // Filtrer les dossiers selon le rôle
-      const allDossiers: Dossier[] = dataD.dossiers || [];
-      if (currentUser?.role === "Admin") {
-        setDossiers(allDossiers);
-      } else {
-        setDossiers(allDossiers.filter(d => currentUser?.dossierIds?.includes(d.id)));
-      }
-    } catch (e) {
-      console.error(e);
+  // Charge les annonces déjà enregistrées pour ce produit (onglet Annonces IA).
+  useEffect(() => {
+    if (!article?.ref) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/annonces?ref=${encodeURIComponent(article.ref)}`, { cache: "no-store" });
+        const data = await res.json();
+        if (data.success) setAnnSaved(data.entries || []);
+      } catch {}
+      try {
+        const r = await fetch(`/api/listings?ref=${encodeURIComponent(article.ref)}`, { cache: "no-store" });
+        const d = await r.json();
+        if (d.success) setListings(d.listings || []);
+      } catch {}
+    })();
+  }, [article?.ref]);
+
+  // Marque / retire une plateforme en ligne pour cet article.
+  const majListing = async (platform: string, active: boolean) => {
+    if (!article?.ref) return;
+    setListings(prev => {
+      const o = prev.filter(l => l.platform !== platform);
+      return [...o, { platform, active, postedAt: active ? new Date().toISOString() : (prev.find(l => l.platform === platform)?.postedAt || null) }];
+    });
+    await fetch("/api/listings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ref: article.ref, platform, active }) }).catch(() => {});
+  };
+  const confirmPoste = async () => {
+    if (!article?.ref || posteBusy) return;
+    setPosteBusy(true);
+    await Promise.all(postePlats.map(p => majListing(p, true)));
+    setPosteBusy(false); setPosteSaved(true);
+  };
+  const joursDepuis = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+
+  const ANN_PLATEFORMES = [
+    { id: "lbc", nom: "LeBonCoin" },
+    { id: "vinted", nom: "Vinted" },
+    { id: "rakuten", nom: "Rakuten" },
+    { id: "facebook", nom: "Facebook" },
+  ];
+
+  const toggleAnnPlat = (pid: string) =>
+    setAnnPlats(prev => prev.includes(pid) ? prev.filter(p => p !== pid) : [...prev, pid]);
+
+  // Recherche du prix réel (web) — lancée en parallèle, s'affiche quand prête.
+  const lancerPrixReel = () => {
+    if (!article) return;
+    setPrixReel(null); setPrixErr(false); setPrixLoading(true);
+    fetch("/api/prix-reel", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ article }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.success) setPrixReel(d.prix); else setPrixErr(true); })
+      .catch(() => setPrixErr(true))
+      .finally(() => setPrixLoading(false));
+  };
+
+  // Prix LeBonCoin réel (Bright Data) — en parallèle de Brave, pour comparer.
+  const lancerPrixLbc = () => {
+    if (!article) return;
+    setPrixLbc(null); setPrixLbcErr(false); setPrixLbcLoading(true);
+    fetch("/api/prix-lbc", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ article }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.success && d.prix?.fourchette) setPrixLbc(d.prix); else setPrixLbcErr(true); })
+      .catch(() => setPrixLbcErr(true))
+      .finally(() => setPrixLbcLoading(false));
+  };
+
+  const lancerPrixCanada = () => {
+    if (!article) return;
+    setPrixCanada(null); setPrixCanadaErr(false); setPrixCanadaLoading(true);
+    fetch("/api/prix-canada", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ article }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.success && d.prix?.fourchette) setPrixCanada(d.prix); else setPrixCanadaErr(true); })
+      .catch(() => setPrixCanadaErr(true))
+      .finally(() => setPrixCanadaLoading(false));
+  };
+
+  const genererAnnonces = async () => {
+    if (!article || annPlats.length === 0) return;
+    setAnnLoading(true); setAnnErr(""); setAnnResults(null);
+    // Prix conscients des plateformes cochées → on n'appelle QUE ce qui sert (économie tokens/coût).
+    const frSel = annPlats.some(p => ["lbc", "vinted", "rakuten"].includes(p)); // marché France €
+    const fbSel = annPlats.includes("facebook");                                 // marché Canada CAD
+    if (frSel) { lancerPrixReel(); lancerPrixLbc(); }  // Brave FR + LeBonCoin réel (Bright Data)
+    if (fbSel) { lancerPrixCanada(); }                 // Marché canadien Vancouver (CAD)
+    try {
+      const res = await fetch("/api/annonces", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ article, plateformes: annPlats, precision: annPrecision }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Génération échouée");
+      setAnnResults(data.annonces);
+      setPostePlats([...annPlats]); setPosteSaved(false); // pré-coche pour la confirmation "mis en ligne"
+      try {
+        const r2 = await fetch(`/api/annonces?ref=${encodeURIComponent(article.ref)}`, { cache: "no-store" });
+        const d2 = await r2.json();
+        if (d2.success) setAnnSaved(d2.entries || []);
+      } catch {}
+    } catch (e: any) {
+      setAnnErr(e.message || "Erreur");
     } finally {
-      setLoading(false);
+      setAnnLoading(false);
     }
+  };
+
+  const copierAnn = async (txt: string, key: string) => {
+    try { await navigator.clipboard.writeText(txt); setCopiedKey(key); setTimeout(() => setCopiedKey(""), 1500); } catch {}
+  };
+
+  const appliquer = (currentUser: any, dataA: any, dataD: any) => {
+    setArticle(dataA?.article);
+    setForm(dataA?.article);
+    const allDossiers: Dossier[] = dataD?.dossiers || [];
+    setDossiers(currentUser?.role === "Admin" ? allDossiers : allDossiers.filter(d => currentUser?.dossierIds?.includes(d.id)));
+  };
+
+  const revalider = async (currentUser: any) => {
+    const [resA, resD] = await Promise.all([
+      fetch(`/api/articles/${id}`, { cache: "no-store" }),
+      fetch("/api/dossiers", { cache: "no-store" }),
+    ]);
+    const dataA = await resA.json(); const dataD = await resD.json();
+    setCache(`article:${id}`, dataA); setCache("dossiers", dataD);
+    appliquer(currentUser, dataA, dataD);
+  };
+
+  const fetchData = async (user?: any) => {
+    const currentUser = user || userSession;
+    const cA = getCache<any>(`article:${id}`);
+    const cD = getCache<any>("dossiers");
+    if (cA && cD) {
+      appliquer(currentUser, cA, cD);
+      setLoading(false);
+      if (isStale(`article:${id}`) || isStale("dossiers")) revalider(currentUser).catch(e => console.error(e));
+      return;
+    }
+    try { await revalider(currentUser); } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
   const handleSave = async () => {
@@ -73,7 +235,7 @@ export default function ArticlePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      invalidateCache("articles");
+      invalidateCache("articles", `article:${id}`);
       await fetchData();
       setEditing(false);
     } finally {
@@ -130,7 +292,7 @@ export default function ArticlePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ imageIndex: index }),
     });
-    invalidateCache("articles");
+    invalidateCache("articles", `article:${id}`);
     await fetchData();
     setPhotoIdx(0);
   };
@@ -141,16 +303,50 @@ export default function ArticlePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dossierId }),
     });
-    invalidateCache("articles", "dossiers");
+    invalidateCache("articles", "dossiers", `article:${id}`);
     setShowMove(false);
     await fetchData();
+  };
+
+  // Partage natif (AirDrop / WhatsApp / Mail…). Texte court + lien vers la
+  // fiche publique. Appel synchrone dans le geste utilisateur (pas d'await avant
+  // navigator.share, sinon iOS bloque l'ouverture du menu).
+  const handlePartager = () => {
+    if (!article) return;
+    const url   = `${window.location.origin}/partage/${id}`;
+    const texte = `👋 Regarde ce ${article.nom}${article.fonctionnel === "Oui" ? ", en parfait état" : ""}. Photos et détails ici :`;
+    const data: any = { title: article.nom, text: texte, url };
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      (navigator as any).share(data).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(`${texte} ${url}`)
+        .then(() => setModal({ message: "Lien copié dans le presse-papier !" }))
+        .catch(() => setModal({ message: url }));
+    }
+    // Réchauffe le prix neuf en arrière-plan pour que la page partagée l'ait direct.
+    if (!(article as any).prixNeuf) {
+      fetch("/api/prix-neuf", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ article }),
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && d.neuf?.prix) {
+            fetch(`/api/articles/${id}`, {
+              method: "PATCH", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ prixNeuf: d.neuf }),
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   const handleDeleteArticle = async () => {
     setSaving(true);
     try {
       await fetch(`/api/articles/${id}`, { method: "DELETE" });
-      invalidateCache("articles", "dossiers");
+      invalidateCache("articles", "dossiers", `article:${id}`);
       router.push(article?.dossierId ? `/dossiers/${article.dossierId}` : "/dossiers");
     } catch (e) {
       console.error(e);
@@ -174,6 +370,40 @@ export default function ArticlePage() {
       }
     } catch (e: any) {
       if (e?.name !== "AbortError") console.error(e);
+    }
+  };
+
+  // Télécharger TOUTES les photos (originales) d'un coup. Mobile → menu natif
+  // (« Enregistrer N images » dans la pellicule). Desktop → téléchargements multiples.
+  const handleDownloadAll = async () => {
+    const imgs = article?.images || [];
+    if (!imgs.length || downloadingAll) return;
+    setDownloadingAll(true);
+    try {
+      const ref = article?.ref || "photo";
+      const files: File[] = [];
+      for (let i = 0; i < imgs.length; i++) {
+        const res  = await fetch(imgs[i].url);          // url originale Cloudinary (pleine qualité)
+        const blob = await res.blob();
+        files.push(new File([blob], `${ref}-${i + 1}.jpg`, { type: blob.type || "image/jpeg" }));
+      }
+      const nav: any = navigator;
+      if (nav.canShare && nav.canShare({ files })) {
+        await nav.share({ files, title: article?.nom || "Photos" });
+      } else {
+        // Repli desktop : un téléchargement par photo
+        for (let i = 0; i < files.length; i++) {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(files[i]);
+          a.download = files[i].name;
+          a.click();
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") setModal({ message: "Échec du téléchargement, réessaie." });
+    } finally {
+      setDownloadingAll(false);
     }
   };
 
@@ -223,7 +453,7 @@ export default function ArticlePage() {
         onTouchEnd={handleTouchEnd}
       >
         {images.length > 0 ? (
-          <img src={medium(images[photoIdx]?.url)} alt={article.nom} style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }} onClick={() => setLightbox(true)} />
+          <img src={medium(images[photoIdx]?.url)} alt={article.nom} style={{ width: "100%", height: "100%", objectFit: "contain", cursor: "pointer" }} onClick={() => setLightbox(true)} />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", color: "rgba(26,31,58,0.2)" }}>
             <span>📷</span>
@@ -345,7 +575,14 @@ export default function ArticlePage() {
         <div style={{ marginBottom: "16px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
             <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>Photos</p>
-            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.05)", borderRadius: "50px", padding: "3px 10px" }}>{images.length} / 10</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {images.length > 0 && (
+                <button onClick={handleDownloadAll} disabled={downloadingAll} style={{ fontSize: "11px", fontWeight: 700, color: downloadingAll ? "rgba(255,255,255,0.4)" : "#6366f1", background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "50px", padding: "4px 12px", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: "6px" }}>
+                  {downloadingAll ? <><span style={{ width: "10px", height: "10px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} /> Préparation…</> : "⬇️ Tout télécharger"}
+                </button>
+              )}
+              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.05)", borderRadius: "50px", padding: "3px 10px" }}>{images.length} / 10</span>
+            </div>
           </div>
           <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "6px" }}>
             {images.map((img: any, i: number) => (
@@ -371,6 +608,12 @@ export default function ArticlePage() {
               {isAdmin && (
                 <button onClick={() => setEditing(true)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(255,77,90,0.35)" }}>✏️ Modifier l'article</button>
               )}
+              {/* Rédiger annonce — Admin seulement (panneau inline, plus de détour launcher) */}
+              {isAdmin && (
+                <button onClick={() => { setAnnPlats([]); setAnnPrecision(""); setAnnResults(null); setAnnErr(""); setPrixReel(null); setPrixErr(false); setPrixLoading(false); setPrixLbc(null); setPrixLbcErr(false); setPrixLbcLoading(false); setPrixCanada(null); setPrixCanadaErr(false); setPrixCanadaLoading(false); setShowAnnonce(true); }} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(245,158,11,0.35)" }}>✍️ Rédiger une annonce</button>
+              )}
+              {/* Partager — envoie un lien vers la fiche publique via le menu natif */}
+              <button onClick={handlePartager} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(99,102,241,0.35)" }}>📤 Partager</button>
               {/* Déplacer — tous les utilisateurs, mais dossiers filtrés */}
               <button onClick={() => setShowMove(true)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>📂 Déplacer vers un dossier</button>
               {/* Supprimer l'article — Admin seulement */}
@@ -385,6 +628,43 @@ export default function ArticlePage() {
             </>
           )}
         </div>
+
+        {/* Statut "en ligne" par plateforme (suivi rotation) — TOUJOURS visible (admin) */}
+        {isAdmin && (
+          <div style={{ marginTop: "22px" }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: "10px" }}>📍 En ligne (clique pour marquer / retirer)</p>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              {[["lbc", "LeBonCoin"], ["vinted", "Vinted"], ["rakuten", "Rakuten"], ["facebook", "Facebook"]].map(([id, nom]) => {
+                const l = listings.find(x => x.platform === id); const on = !!(l && l.active);
+                return (
+                  <button key={id} onClick={() => majListing(id, !on)} title={on && l?.postedAt ? `depuis ${joursDepuis(l.postedAt)} j` : ""} style={{ padding: "8px 12px", borderRadius: "99px", border: `1.5px solid ${on ? "#10b981" : "rgba(255,255,255,0.12)"}`, background: on ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.04)", color: on ? "#10b981" : "rgba(255,255,255,0.55)", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                    {on ? "🟢" : "⚪"} {nom}{on && l?.postedAt ? ` · ${joursDepuis(l.postedAt)}j` : ""}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Annonces enregistrées pour ce produit (relues depuis l'onglet Annonces IA) */}
+        {isAdmin && annSaved.length > 0 && (
+          <div style={{ marginTop: "22px" }}>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: "10px" }}>📢 Annonces générées ({annSaved.length})</p>
+            {annSaved.map((a, i) => (
+              <div key={i} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "14px", marginBottom: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{a.plateforme}</span>
+                  <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}>{a.date} {a.heure}</span>
+                </div>
+                <p style={{ fontSize: "14px", fontWeight: 700, color: "white", lineHeight: 1.35 }}>{a.titre}</p>
+                {a.prix && <p style={{ fontSize: "13px", fontWeight: 700, color: "#f59e0b", marginTop: "6px" }}>💰 {a.prix}</p>}
+                <button onClick={() => copierAnn(a.titre, `st${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `st${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `st${i}` ? "✓ Titre copié" : "Copier le titre"}</button>
+                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 1.55, whiteSpace: "pre-line", marginTop: "10px", paddingTop: "10px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{a.description}</p>
+                <button onClick={() => copierAnn(a.description, `sd${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `sd${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `sd${i}` ? "✓ Description copiée" : "Copier la description"}</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modal déplacer */}
@@ -407,17 +687,161 @@ export default function ArticlePage() {
         </div>
       )}
 
+      {/* Panneau Rédiger une annonce */}
+      {showAnnonce && (
+        <div onClick={() => { if (!annLoading) setShowAnnonce(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 60, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f3a", borderRadius: "28px 28px 0 0", width: "100%", maxWidth: "480px", padding: "24px 20px 48px", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto 20px" }} />
+            <h2 style={{ fontSize: "20px", fontWeight: 900, color: "white", marginBottom: "4px", textAlign: "center" }}>✍️ Rédiger une annonce</h2>
+            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", textAlign: "center", marginBottom: "20px" }}>{article.nom}</p>
+
+            {!annResults ? (
+              <>
+                <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>Plateformes</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "18px" }}>
+                  {ANN_PLATEFORMES.map(p => (
+                    <button key={p.id} onClick={() => toggleAnnPlat(p.id)} style={{ padding: "14px", borderRadius: "14px", border: `1px solid ${annPlats.includes(p.id) ? "#f59e0b" : "rgba(255,255,255,0.1)"}`, background: annPlats.includes(p.id) ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)", color: annPlats.includes(p.id) ? "#f59e0b" : "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                      {annPlats.includes(p.id) && <span>✓</span>}{p.nom}
+                    </button>
+                  ))}
+                </div>
+                <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>Précision (optionnel)</p>
+                <input type="text" value={annPrecision} onChange={e => setAnnPrecision(e.target.value)} placeholder="ex: insiste sur la batterie neuve" style={{ width: "100%", padding: "13px 14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "white", fontSize: "14px", fontFamily: "inherit", marginBottom: "18px", boxSizing: "border-box" }} />
+                {annErr && <p style={{ color: "#ff4d5a", fontSize: "13px", marginBottom: "12px" }}>{annErr}</p>}
+                <button onClick={genererAnnonces} disabled={annPlats.length === 0 || annLoading} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: annPlats.length === 0 ? "default" : "pointer", fontFamily: "inherit", opacity: (annPlats.length === 0 || annLoading) ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                  {annLoading ? <><span style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Génération...</> : "Générer les annonces"}
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Prix réel (recherche web) */}
+                {(prixLoading || prixReel || prixErr) && (
+                  <div style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: "16px", padding: "14px", marginBottom: "14px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>💰 Marché web (Brave)</div>
+                    {prixLoading ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "rgba(255,255,255,0.6)" }}>
+                        <span style={{ width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#10b981", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Recherche d'annonces réelles en cours…
+                      </div>
+                    ) : prixErr ? (
+                      <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)" }}>Prix réel indisponible. <button onClick={lancerPrixReel} style={{ background: "none", border: "none", color: "#10b981", cursor: "pointer", fontWeight: 600, fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>Réessayer</button></div>
+                    ) : prixReel && !prixReel.fourchette && (!prixReel.annonces || prixReel.annonces.length === 0) ? (
+                      <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)" }}>Aucun prix d'occasion trouvé pour ce modèle.</div>
+                    ) : prixReel ? (
+                      <>
+                        {prixReel.fourchette && (
+                          <p style={{ fontSize: "20px", fontWeight: 900, color: "white", marginBottom: "8px" }}>{prixReel.fourchette.min} – {prixReel.fourchette.max} €</p>
+                        )}
+                        {Array.isArray(prixReel.annonces) && prixReel.annonces.map((a: any, i: number) => (
+                          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", padding: "6px 0", borderTop: i === 0 ? "1px solid rgba(255,255,255,0.08)" : "none", fontSize: "12px" }}>
+                            <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.7)", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{a.plateforme} — {a.titre} ↗</a>
+                            <span style={{ color: "#10b981", fontWeight: 700, flexShrink: 0 }}>{a.prix} €</span>
+                          </div>
+                        ))}
+                        {prixReel.conseil && (
+                          <div style={{ marginTop: "8px", fontSize: "12px", color: "rgba(255,255,255,0.5)", fontStyle: "italic", paddingTop: "8px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>💡 {prixReel.conseil}</div>
+                        )}
+                      </>
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Prix LeBonCoin réel (Bright Data) — pour comparaison */}
+                {(prixLbcLoading || prixLbc || prixLbcErr) && (
+                  <div style={{ background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.25)", borderRadius: "16px", padding: "14px", marginBottom: "14px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: "#ff6b35", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>📍 LeBonCoin (annonces réelles)</div>
+                    {prixLbcLoading ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "rgba(255,255,255,0.6)" }}>
+                        <span style={{ width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff6b35", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Analyse LeBonCoin en cours…
+                      </div>
+                    ) : prixLbcErr ? (
+                      <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)" }}>Indisponible. <button onClick={lancerPrixLbc} style={{ background: "none", border: "none", color: "#ff6b35", cursor: "pointer", fontWeight: 600, fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>Réessayer</button></div>
+                    ) : prixLbc && prixLbc.fourchette ? (
+                      <>
+                        <p style={{ fontSize: "20px", fontWeight: 900, color: "white", marginBottom: "4px" }}>{prixLbc.fourchette.min} – {prixLbc.fourchette.max} €</p>
+                        <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>Médiane {prixLbc.median} € · sur {prixLbc.count} annonces LeBonCoin réelles</div>
+                      </>
+                    ) : null}
+                  </div>
+                )}
+                {(prixCanadaLoading || prixCanada || prixCanadaErr) && (
+                  <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.28)", borderRadius: "16px", padding: "14px", marginBottom: "14px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: "#8b5cf6", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>📘 Facebook Marketplace — Canada (Vancouver)</div>
+                    {prixCanadaLoading ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "rgba(255,255,255,0.6)" }}>
+                        <span style={{ width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#8b5cf6", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Recherche marché canadien…
+                      </div>
+                    ) : prixCanadaErr ? (
+                      <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)" }}>Indisponible. <button onClick={lancerPrixCanada} style={{ background: "none", border: "none", color: "#8b5cf6", cursor: "pointer", fontWeight: 600, fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>Réessayer</button></div>
+                    ) : prixCanada && prixCanada.fourchette ? (
+                      <>
+                        <p style={{ fontSize: "20px", fontWeight: 900, color: "white", marginBottom: "6px" }}>{prixCanada.fourchette.min} – {prixCanada.fourchette.max} $ CAD</p>
+                        {Array.isArray(prixCanada.annonces) && prixCanada.annonces.slice(0, 3).map((a: any, i: number) => (
+                          <div key={i} style={{ fontSize: "12px", marginBottom: "3px" }}>
+                            <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.7)", textDecoration: "none" }}>{a.prix} CAD — {a.plateforme || "annonce"} ↗</a>
+                          </div>
+                        ))}
+                        {prixCanada.conseil && <div style={{ marginTop: "6px", fontSize: "12px", color: "rgba(255,255,255,0.5)", fontStyle: "italic" }}>💡 {prixCanada.conseil}</div>}
+                      </>
+                    ) : null}
+                  </div>
+                )}
+                {annResults.map((a, i) => (
+                  <div key={i} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "14px", marginBottom: "10px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{a.nom}</span>
+                    <p style={{ fontSize: "14px", fontWeight: 700, color: "white", lineHeight: 1.35, marginTop: "8px" }}>{a.titre}</p>
+                    <button onClick={() => copierAnn(a.titre, `rt${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `rt${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `rt${i}` ? "✓ Titre copié" : "Copier le titre"}</button>
+                    <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 1.55, whiteSpace: "pre-line", marginTop: "10px", paddingTop: "10px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{a.desc}</p>
+                    <button onClick={() => copierAnn(a.desc, `rd${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `rd${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `rd${i}` ? "✓ Description copiée" : "Copier la description"}</button>
+                  </div>
+                ))}
+                {!posteSaved ? (
+                  <div style={{ background: "rgba(99,102,241,0.1)", border: "1px solid #6366f1", borderRadius: "14px", padding: "14px", marginBottom: "10px" }}>
+                    <p style={{ fontSize: "14px", fontWeight: 800, color: "white", margin: "0 0 4px" }}>📤 Tu l&apos;as mis en ligne ?</p>
+                    <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", margin: "0 0 10px" }}>Coche là où tu l&apos;as posté (suivi de rotation). Sinon « juste le prix ».</p>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
+                      {annResults.map((a: any) => { const on = postePlats.includes(a.plat); const nom: any = { lbc: "LeBonCoin", vinted: "Vinted", rakuten: "Rakuten", facebook: "Facebook" }; return (
+                        <button key={a.plat} onClick={() => setPostePlats(prev => prev.includes(a.plat) ? prev.filter(x => x !== a.plat) : [...prev, a.plat])} style={{ padding: "8px 14px", borderRadius: "99px", border: `1.5px solid ${on ? "#6366f1" : "rgba(255,255,255,0.15)"}`, background: on ? "rgba(99,102,241,0.2)" : "transparent", color: on ? "#c7d2fe" : "rgba(255,255,255,0.6)", fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{on ? "✓ " : ""}{nom[a.plat] || a.plat}</button>
+                      ); })}
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={confirmPoste} disabled={posteBusy || postePlats.length === 0} style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: (posteBusy || postePlats.length === 0) ? 0.5 : 1 }}>{posteBusy ? "..." : "Confirmer la mise en ligne"}</button>
+                      <button onClick={() => { setPostePlats([]); setPosteSaved(true); }} style={{ padding: "12px 14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Juste le prix</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid #6366f1", borderRadius: "12px", padding: "10px 14px", marginBottom: "10px", fontSize: "12px", color: "#c7d2fe" }}>{postePlats.length ? "✓ Mise en ligne enregistrée (suivi rotation)." : "Ok, noté — pas mis en ligne."}</div>
+                )}
+                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", textAlign: "center", margin: "12px 0" }}>Enregistré sur la fiche ✓</p>
+                <button onClick={() => { setAnnResults(null); setAnnPlats([]); setAnnPrecision(""); setPrixReel(null); setPrixErr(false); setPrixLoading(false); setPrixLbc(null); setPrixLbcErr(false); setPrixLbcLoading(false); setPrixCanada(null); setPrixCanadaErr(false); setPrixCanadaLoading(false); }} style={{ width: "100%", padding: "14px", borderRadius: "14px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: "8px" }}>← Générer d'autres</button>
+                <button onClick={() => setShowAnnonce(false)} style={{ width: "100%", padding: "14px", borderRadius: "14px", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Fermer</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Lightbox */}
       {lightbox && images.length > 0 && (
         <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} style={{ position: "fixed", inset: 0, background: "black", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <button onClick={() => setLightbox(false)} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", color: "white", fontSize: "20px", cursor: "pointer", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           <button onClick={() => handleShareImage(images[photoIdx]?.url, `photo-${photoIdx + 1}.jpg`)} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", cursor: "pointer", zIndex: 2 }}>⬇️</button>
           <img src={medium(images[photoIdx]?.url)} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
-          <div style={{ position: "absolute", bottom: "30px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
-            {images.map((_: any, i: number) => (
-              <button key={i} onClick={() => setPhotoIdx(i)} style={{ height: "5px", width: i === photoIdx ? "14px" : "5px", borderRadius: "3px", border: "none", cursor: "pointer", background: i === photoIdx ? "#ff4d5a" : "rgba(255,255,255,0.3)", transition: "all 0.2s", padding: 0 }} />
-            ))}
-          </div>
+          {/* Supprimer la photo en plein écran (en plus du bouton de la fiche) */}
+          {images.length > 0 && (
+            <button onClick={() => setModal({ message: "Supprimer cette photo ?", onConfirm: () => handleDeleteImage(photoIdx) })} style={{ position: "absolute", bottom: `calc(${images.length > 1 ? 92 : 24}px + env(safe-area-inset-bottom))`, right: "20px", width: "56px", height: "56px", borderRadius: "16px", background: "rgba(255,77,90,0.92)", border: "none", cursor: "pointer", fontSize: "24px", color: "white", zIndex: 3, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(0,0,0,0.4)" }}>🗑</button>
+          )}
+          {/* Bande de miniatures cliquables (plein écran) */}
+          {images.length > 1 && (
+            <div style={{ position: "absolute", bottom: "calc(16px + env(safe-area-inset-bottom))", left: 0, right: 0, overflowX: "auto", padding: "0 14px", zIndex: 2 }}>
+              <div style={{ display: "flex", gap: "8px", width: "max-content", margin: "0 auto" }}>
+                {images.map((img: any, i: number) => (
+                  <button key={i} onClick={() => setPhotoIdx(i)} style={{ width: "52px", height: "52px", borderRadius: "12px", overflow: "hidden", flexShrink: 0, padding: 0, cursor: "pointer", border: `2px solid ${i === photoIdx ? "#ff4d5a" : "rgba(255,255,255,0.25)"}`, background: "none", opacity: i === photoIdx ? 1 : 0.55, transition: "opacity 0.15s, border-color 0.15s" }}>
+                    <img src={thumb(img.url)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

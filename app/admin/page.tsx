@@ -67,15 +67,21 @@ export default function AdminPage() {
     try {
       const res  = await fetch("/api/sync", { method: "POST" });
       const data = await res.json();
-      setSyncMsg(data.success
-        ? { ok: true,  text: "✓ Synchronisation terminée" }
-        : { ok: false, text: `Erreur : ${data.error || "inconnue"}` }
-      );
+      if (data.success) {
+        setSyncMsg({ ok: true, text: "✓ Synchronisation terminée" });
+      } else {
+        const err = (data.error || "").toLowerCase();
+        const isQuota = err.includes("quota") || err.includes("urlfetch") || err.includes("too many");
+        setSyncMsg({ ok: false, text: isQuota
+          ? "⚠️ Quota Google épuisé — réessaie après minuit (heure Pacifique)"
+          : `Erreur : ${data.error || "inconnue"}`
+        });
+      }
     } catch {
       setSyncMsg({ ok: false, text: "Erreur réseau" });
     } finally {
       setSyncing(false);
-      setTimeout(() => setSyncMsg(null), 5000);
+      setTimeout(() => setSyncMsg(null), 8000);
     }
   };
 
