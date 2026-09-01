@@ -123,7 +123,11 @@ export default function DossierPage() {
     .filter(a => {
       if (!pickerSearch.trim()) return true;
       const q = pickerSearch.toLowerCase();
-      return (a.ref || "").toLowerCase().includes(q) || (a.nom || "").toLowerCase().includes(q);
+      const ref = (a.ref || "").toLowerCase(), nom = (a.nom || "").toLowerCase();
+      if (ref.includes(q) || nom.includes(q)) return true;
+      // sans séparateurs : « I15PMHS » trouve « I15PM-HS »
+      const qc = q.replace(/[^a-z0-9]/g, "");
+      return qc.length >= 3 && (ref.replace(/[^a-z0-9]/g, "").includes(qc) || nom.replace(/[^a-z0-9]/g, "").includes(qc));
     });
 
   const filtres = ["Tous", "Téléphone", "Divers", "Sans photo"];

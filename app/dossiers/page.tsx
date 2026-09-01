@@ -105,9 +105,14 @@ export default function DossiersPage() {
   const dossierNom = (id?: string) => dossiers.find(d => d.id === id)?.nom || "—";
   const thumb = (url?: string) => url ? url.replace("/upload/", "/upload/w_120,h_120,c_fill,q_auto,f_auto/") : "";
   const q = query.trim().toLowerCase();
-  const resultats = q.length === 0 ? [] : articles.filter((a: any) =>
-    (a.ref || "").toLowerCase().includes(q) || (a.nom || "").toLowerCase().includes(q)
-  );
+  // Version "collapsée" (sans séparateurs) → « I15PMHS » trouve « I15PM-HS ».
+  const collapse = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const qc = collapse(q);
+  const resultats = q.length === 0 ? [] : articles.filter((a: any) => {
+    const ref = (a.ref || "").toLowerCase(), nom = (a.nom || "").toLowerCase();
+    if (ref.includes(q) || nom.includes(q)) return true;
+    return qc.length >= 3 && (collapse(ref).includes(qc) || collapse(nom).includes(qc));
+  });
 
   // Statut "en ligne" (plateformes marketplace) — chargé en LAZY + cache, uniquement
   // quand une recherche enrichie (≤3 résultats) le nécessite. Zéro impact ailleurs.
