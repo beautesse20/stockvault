@@ -25,6 +25,8 @@ export default function ArticlePage() {
   const [userSession, setUserSession] = useState<any>(null);
   const [visSaving, setVisSaving] = useState(false);
   const [modal, setModal]         = useState<null | { message: string; onConfirm?: () => void }>(null);
+  const [histText, setHistText]   = useState("");
+  const [histBusy, setHistBusy]   = useState(false);
   // Rédaction d'annonce inline
   const [showAnnonce, setShowAnnonce]   = useState(false);
   const [annPlats, setAnnPlats]         = useState<string[]>([]);
@@ -240,6 +242,35 @@ export default function ArticlePage() {
       setEditing(false);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Journal d'historique / réparations (interne, admin-only, jamais dans les annonces).
+  const ajouterHistorique = async () => {
+    const texte = histText.trim();
+    if (!texte || !article || histBusy) return;
+    setHistBusy(true);
+    try {
+      const entree = { date: new Date().toISOString(), texte, auteur: userSession?.nom || "" };
+      const liste  = [ ...(((article as any).historique) || []), entree ];
+      await fetch(`/api/articles/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historique: liste }) });
+      setHistText("");
+      invalidateCache("articles", `article:${id}`);
+      await fetchData();
+    } finally {
+      setHistBusy(false);
+    }
+  };
+  const supprimerHistorique = async (idx: number) => {
+    if (!article || histBusy) return;
+    setHistBusy(true);
+    try {
+      const liste = (((article as any).historique) || []).filter((_: any, i: number) => i !== idx);
+      await fetch(`/api/articles/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ historique: liste }) });
+      invalidateCache("articles", `article:${id}`);
+      await fetchData();
+    } finally {
+      setHistBusy(false);
     }
   };
 
@@ -570,6 +601,46 @@ export default function ArticlePage() {
             </div>
           </div>
         )}
+
+        {/* Historique / Réparations — Admin seulement, jamais public ni dans les annonces */}
+        {isAdmin && !editing && (() => {
+          const hist = (((article as any).historique) || []).map((h: any, i: number) => ({ ...h, _i: i }))
+            .sort((a: any, b: any) => String(b.date).localeCompare(String(a.date)));
+          const fmt = (iso: string) => { try { return new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return iso; } };
+          return (
+            <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "14px", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                <p style={{ fontSize: "12px", fontWeight: 700, color: "white" }}>🔧 Historique / Réparations</p>
+                <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.06)", borderRadius: "50px", padding: "2px 8px" }}>interne · admin</span>
+              </div>
+
+              {hist.length === 0 ? (
+                <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", marginBottom: "12px" }}>Aucune réparation notée. Ajoute la première ci-dessous.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
+                  {hist.map((h: any) => (
+                    <div key={h._i} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", padding: "9px 11px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.3)", marginBottom: "3px" }}>🕗 {fmt(h.date)}{h.auteur ? ` · ${h.auteur}` : ""}</p>
+                        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.9)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{h.texte}</p>
+                      </div>
+                      <button onClick={() => setModal({ message: "Supprimer cette entrée d'historique ?", onConfirm: () => supprimerHistorique(h._i) })} disabled={histBusy} title="Supprimer" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.25)", cursor: "pointer", fontSize: "14px", padding: "0 2px", flexShrink: 0 }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <textarea
+                value={histText}
+                onChange={e => setHistText(e.target.value)}
+                placeholder="Ex : Changement écran + batterie, testé OK…"
+                rows={2}
+                style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", padding: "10px 14px", color: "white", fontSize: "13px", outline: "none", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+              />
+              <button onClick={ajouterHistorique} disabled={histBusy || !histText.trim()} style={{ width: "100%", marginTop: "8px", padding: "11px", borderRadius: "12px", background: histText.trim() ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.05)", border: "1px solid rgba(99,102,241,0.3)", color: histText.trim() ? "#a5b4fc" : "rgba(255,255,255,0.3)", fontSize: "13px", fontWeight: 700, cursor: histText.trim() ? "pointer" : "default", fontFamily: "inherit", opacity: histBusy ? 0.6 : 1 }}>{histBusy ? "…" : "➕ Ajouter au journal"}</button>
+            </div>
+          );
+        })()}
 
         {/* Section photos */}
         <div style={{ marginBottom: "16px" }}>
