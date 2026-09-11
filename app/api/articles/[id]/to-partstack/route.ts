@@ -53,7 +53,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ["Stockage", a.stockage], ["Couleur", a.couleur], ["Écran", a.ecran],
       ["Coque", a.coque], ["Batterie", a.batterie], ["Fonctionnel", a.fonctionnel], ["Défaut", a.defaut],
     ].filter(([, v]) => v && String(v).trim()).map(([k, v]) => `${k}: ${v}`).join(" · ");
-    const notes = (specs ? specs + "\n" : "") + "/ AJOUTÉ AUTOMATIQUEMENT DEPUIS STOCKVAULT";
+    const refLine = a.ref ? `Réf StockVault : ${a.ref}\n` : "";
+    const notes = (specs ? specs + "\n" : "") + refLine + "/ AJOUTÉ AUTOMATIQUEMENT DEPUIS STOCKVAULT";
 
     // État : fonctionnel=Non → HS ; défaut présent → Partiel ; sinon OK.
     const condition = a.fonctionnel === "Non" ? "broken" : (a.defaut && String(a.defaut).trim() ? "partial" : "ok");
