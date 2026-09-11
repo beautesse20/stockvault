@@ -27,6 +27,7 @@ export default function ArticlePage() {
   const [modal, setModal]         = useState<null | { message: string; onConfirm?: () => void }>(null);
   const [histText, setHistText]   = useState("");
   const [histBusy, setHistBusy]   = useState(false);
+  const [transforming, setTransforming] = useState(false);
   // Rédaction d'annonce inline
   const [showAnnonce, setShowAnnonce]   = useState(false);
   const [annPlats, setAnnPlats]         = useState<string[]>([]);
@@ -271,6 +272,23 @@ export default function ArticlePage() {
       await fetchData();
     } finally {
       setHistBusy(false);
+    }
+  };
+
+  // Transforme l'article en pièce PartStack (crée la pièce, puis retire l'article de StockVault).
+  const transformerEnPiece = async () => {
+    if (transforming) return;
+    setTransforming(true);
+    try {
+      const res = await fetch(`/api/articles/${id}/to-partstack`, { method: "POST" });
+      const d = await res.json();
+      if (!res.ok || !d.success) throw new Error(d.error || "échec");
+      invalidateCache("articles", `article:${id}`);
+      setModal({ message: `✅ Transformé en pièce PartStack (${d.ref}). L'article a été retiré de StockVault.`, onConfirm: () => router.push("/dossiers") });
+    } catch (e) {
+      setModal({ message: "❌ Échec de la transformation. L'article n'a pas été touché — réessaie." });
+    } finally {
+      setTransforming(false);
     }
   };
 
@@ -686,6 +704,10 @@ export default function ArticlePage() {
               {/* Enregistrer la vente — Admin : ouvre Suivi des ventes avec l'article pré-sélectionné */}
               {isAdmin && article && (
                 <button onClick={() => router.push(`/launcher?app=ventes&ref=${encodeURIComponent(article.ref || "")}&nom=${encodeURIComponent(article.nom || "")}&type=${encodeURIComponent(article.type || "")}`)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #10b981, #059669)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(16,185,129,0.35)" }}>💵 Enregistrer la vente</button>
+              )}
+              {/* Transformer en pièce PartStack — Admin seulement */}
+              {isAdmin && article && (
+                <button onClick={() => setModal({ message: `Transformer « ${article.nom} » en pièce PartStack ?\nL'article sera retiré de StockVault (toutes les infos + photos sont conservées dans PartStack).`, onConfirm: transformerEnPiece })} disabled={transforming} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #6d28d9, #9333ea)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(147,51,234,0.35)", opacity: transforming ? 0.6 : 1 }}>{transforming ? "Transformation…" : "🔧 Transformer en pièce"}</button>
               )}
               {/* Partager — envoie un lien vers la fiche publique via le menu natif */}
               <button onClick={handlePartager} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(99,102,241,0.35)" }}>📤 Partager</button>
