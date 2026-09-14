@@ -13,6 +13,7 @@ export default function DossierPage() {
   const [dossier, setDossier]   = useState<Dossier | null>(null);
   const [loading, setLoading]   = useState(true);
   const [filtre, setFiltre]     = useState("Tous");
+  const [recherche, setRecherche] = useState("");
   const [isAdmin, setIsAdmin]   = useState(false);
   const [vue, setVue]           = useState<"mosaique" | "liste" | "compacte">("mosaique");
   useEffect(() => { const v = typeof window !== "undefined" && localStorage.getItem("sv_vue_articles"); if (v === "liste" || v === "compacte" || v === "mosaique") setVue(v); }, []);
@@ -132,9 +133,19 @@ export default function DossierPage() {
 
   const filtres = ["Tous", "Téléphone", "Divers", "Sans photo"];
   const articlesFiltres = articles.filter(a => {
-    if (filtre === "Tous")       return true;
-    if (filtre === "Sans photo") return !a.images || a.images.length === 0;
-    return a.type === filtre;
+    // Filtre type / sans photo
+    if (filtre === "Sans photo") { if (a.images && a.images.length > 0) return false; }
+    else if (filtre !== "Tous" && a.type !== filtre) return false;
+    // Recherche réf/nom, insensible aux séparateurs (« I15PMHS » trouve « I15PM-HS »)
+    const q = recherche.trim().toLowerCase();
+    if (q) {
+      const ref = (a.ref || "").toLowerCase(), nom = (a.nom || "").toLowerCase();
+      if (!(ref.includes(q) || nom.includes(q))) {
+        const qc = q.replace(/[^a-z0-9]/g, "");
+        if (!(qc.length >= 3 && (ref.replace(/[^a-z0-9]/g, "").includes(qc) || nom.replace(/[^a-z0-9]/g, "").includes(qc)))) return false;
+      }
+    }
+    return true;
   });
 
   const gradients = [
@@ -163,7 +174,12 @@ export default function DossierPage() {
       }}>
         <button onClick={() => router.push("/dossiers")} style={{ background: "none", border: "none", color: "#ff4d5a", fontSize: "21px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: "12px", display: "flex", alignItems: "center", gap: "4px" }}>‹ Retour</button>
         <h1 style={{ fontSize: "24px", fontWeight: 900, color: "#1a1f3a", marginBottom: "4px" }}>{dossier?.nom || "Dossier"}</h1>
-        <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "16px" }}>{articles.length} article{articles.length > 1 ? "s" : ""}</p>
+        <p style={{ fontSize: "12px", color: "#8892b0", marginBottom: "16px" }}>{articles.length} article{articles.length > 1 ? "s" : ""}{recherche.trim() ? ` · ${articlesFiltres.length} trouvé${articlesFiltres.length > 1 ? "s" : ""}` : ""}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "white", border: "1px solid #e2e5f0", borderRadius: "12px", padding: "10px 14px", boxShadow: "0 2px 6px rgba(26,31,58,0.06)", marginBottom: "14px" }}>
+          <span style={{ fontSize: "15px", color: "#8892b0" }}>🔍</span>
+          <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Rechercher dans ce dossier…" style={{ flex: 1, border: "none", outline: "none", background: "none", color: "#1a1f3a", fontSize: "14px", fontFamily: "inherit", minWidth: 0 }} />
+          {recherche && <button onClick={() => setRecherche("")} style={{ border: "none", background: "none", color: "#8892b0", fontSize: "16px", cursor: "pointer", padding: 0, lineHeight: 1 }}>✕</button>}
+        </div>
         <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
           {filtres.map(f => (
             <button key={f} onClick={() => setFiltre(f)} style={{ padding: "7px 14px", borderRadius: "50px", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s", background: filtre === f ? "#ff4d5a" : "white", color: filtre === f ? "white" : "#8892b0", border: filtre === f ? "none" : "1px solid #e2e5f0", boxShadow: filtre === f ? "0 4px 12px rgba(255,77,90,0.3)" : "0 2px 6px rgba(26,31,58,0.06)" }}>{f}</button>
@@ -190,8 +206,8 @@ export default function DossierPage() {
 
         {articlesFiltres.length === 0 && (
           <div style={{ textAlign: "center", color: "rgba(255,255,255,0.2)", paddingTop: "60px" }}>
-            <div style={{ fontSize: "48px", marginBottom: "12px" }}>📦</div>
-            <p>Aucun article</p>
+            <div style={{ fontSize: "48px", marginBottom: "12px" }}>{recherche.trim() ? "🔍" : "📦"}</div>
+            <p>{recherche.trim() ? "Aucun résultat" : "Aucun article"}</p>
           </div>
         )}
 
