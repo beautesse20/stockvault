@@ -104,7 +104,7 @@ export default function LauncherPage() {
     const p = new URLSearchParams(window.location.search);
     if (p.get("app") === "annonces" && session?.role === "Admin") {
       const annApp = APPS.find(a => a.nom === "Générateur d'annonces");
-      if (annApp) setShowApp({ url: annApp.url, nom: annApp.nom });
+      if (annApp) setShowApp({ url: withUser(annApp.url), nom: annApp.nom });
     }
     // Depuis une fiche produit : "Enregistrer la vente" → ouvre Suivi des ventes
     // avec l'article pré-sélectionné (préremplissage par URL, pas de handshake).
@@ -114,7 +114,7 @@ export default function LauncherPage() {
         const ref = p.get("ref") || "", nom = p.get("nom") || "", type = p.get("type") || "";
         const prefill = ref ? `${ref}${nom ? " / " + nom : ""}` : "";
         const url = v.url + (prefill ? `?prefill=${encodeURIComponent(prefill)}&type=${encodeURIComponent(type)}` : "");
-        setShowApp({ url, nom: v.nom });
+        setShowApp({ url: withUser(url), nom: v.nom });
       }
     }
   };
@@ -187,9 +187,17 @@ export default function LauncherPage() {
   const handleDel = () => { setPin(p => p.slice(0, -1)); setError(""); };
   const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
 
+  // Ajoute l'utilisateur connecté à l'URL (?u=) pour que les sous-apps (ventes,
+  // PartStack…) attribuent leurs événements au bon utilisateur dans le journal.
+  const withUser = (url: string) => {
+    const nom = getSession()?.nom;
+    if (!nom) return url;
+    return url + (url.includes("?") ? "&" : "?") + "u=" + encodeURIComponent(nom);
+  };
+
   const handleApp = (app: typeof APPS[0]) => {
     if (app.internal) router.push(app.url);
-    else setShowApp({ url: app.url, nom: app.nom });
+    else setShowApp({ url: withUser(app.url), nom: app.nom });
   };
 
   const handleLogout = () => {
