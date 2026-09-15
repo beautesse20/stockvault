@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { logEvent } from "@/lib/audit";
 import { Article, Dossier } from "@/lib/airtable";
 import { thumb, medium } from "@/lib/img";
 import { compressImage } from "@/lib/compress";
@@ -239,6 +240,7 @@ export default function ArticlePage() {
         body: JSON.stringify(form),
       });
       invalidateCache("articles", `article:${id}`);
+      logEvent("article.modif", { cible: article?.ref || id, details: article?.nom || "" });
       await fetchData();
       setEditing(false);
     } finally {
@@ -284,6 +286,7 @@ export default function ArticlePage() {
       const d = await res.json();
       if (!res.ok || !d.success) throw new Error(d.error || "échec");
       invalidateCache("articles", `article:${id}`);
+      logEvent("article.transform", { cible: article?.ref || id, details: `→ pièce ${d.ref}` });
       setModal({ message: `✅ Transformé en pièce PartStack (${d.ref}). L'article a été retiré de StockVault.`, onConfirm: () => router.push("/dossiers") });
     } catch (e) {
       setModal({ message: "❌ Échec de la transformation. L'article n'a pas été touché — réessaie." });
@@ -394,6 +397,7 @@ export default function ArticlePage() {
   const handleDeleteArticle = async () => {
     setSaving(true);
     try {
+      logEvent("article.suppr", { cible: article?.ref || id, details: article?.nom || "" });
       await fetch(`/api/articles/${id}`, { method: "DELETE" });
       invalidateCache("articles", "dossiers", `article:${id}`);
       router.push(article?.dossierId ? `/dossiers/${article.dossierId}` : "/dossiers");

@@ -252,6 +252,11 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* Accès discret au journal d'activité (déverrouillé par code) */}
+      <div style={{ textAlign: "center", padding: "34px 0 14px" }}>
+        <button onClick={() => router.push("/admin/journal")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.13)", fontSize: "11px", cursor: "pointer", fontFamily: "inherit", letterSpacing: "2px" }}>· journal ·</button>
+      </div>
+
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

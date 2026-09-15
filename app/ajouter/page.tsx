@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { createArticle, getDossiers } from "@/lib/firebase";
+import { logEvent } from "@/lib/audit";
 import { compressImage } from "@/lib/compress";
 import { useEffect } from "react";
 
@@ -100,6 +101,7 @@ export default function AjouterPage() {
       }
 
       await createArticle(fields);
+      logEvent("article.ajout", { cible: (fields as any).ref || "", details: (fields as any).nom || "" });
       router.push(dossierId ? `/dossiers/${dossierId}` : "/dossiers");
     } finally {
       setSaving(false);

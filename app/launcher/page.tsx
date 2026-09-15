@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { loginByPin } from "@/lib/firebase";
 import { saveSession, getSession } from "@/lib/auth";
+import { logEvent } from "@/lib/audit";
 
 const APPS = [
   {
@@ -168,6 +169,7 @@ export default function LauncherPage() {
         const found = await loginByPin(newPin);
         if (found) {
           saveSession(found);
+          logEvent("connexion", { cible: found.nom, details: `Rôle ${found.role}` });
           setUser(found);
           setPin("");
           if (found.role === "Standard") router.push("/dossiers");

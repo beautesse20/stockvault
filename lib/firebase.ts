@@ -10,6 +10,8 @@ import {
   deleteDoc,
   query,
   where,
+  orderBy,
+  limit as fbLimit,
   arrayUnion,
   writeBatch,
 } from "firebase/firestore";
@@ -132,6 +134,16 @@ export async function updateArticle(id: string, fields: Partial<Article>): Promi
     if (clean[k] === undefined) delete clean[k];
   });
   await updateDoc(doc(db, "articles", id), clean);
+}
+
+// ── Journal d'audit (qui fait quoi dans l'app) ──
+// Écriture minuscule + best-effort. Lecture réservée à l'écran admin.
+export async function addAuditEvent(ev: Record<string, any>): Promise<void> {
+  await addDoc(collection(db, "audit_log"), { ...ev, ts: new Date().toISOString() });
+}
+export async function getAuditEvents(max = 300): Promise<any[]> {
+  const snap = await getDocs(query(collection(db, "audit_log"), orderBy("ts", "desc"), fbLimit(max)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 // Ajoute une image SANS écraser les autres (atomique, sûr en parallèle)

@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Article, Dossier } from "@/lib/airtable";
 import { assignArticlesToDossier } from "@/lib/firebase";
+import { logEvent } from "@/lib/audit";
 import { thumb } from "@/lib/img";
 import { getCache, setCache, isStale } from "@/lib/cache";
 
@@ -103,6 +104,7 @@ export default function DossierPage() {
     setAssigning(true);
     try {
       await assignArticlesToDossier([...selected], id);
+      logEvent("article.deplace", { cible: dossier?.nom || id, details: `${selected.size} article(s)` });
       setShowPicker(false);
       await fetchData();
     } catch (e) {
