@@ -1,0 +1,594 @@
+<title>Le Manuel de B&M</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F6F7FB; --surface:#FFFFFF; --surface-2:#EEF1F8; --sunken:#F0EEEA;
+    --ink:#171B2E; --ink-2:#4A5169; --ink-3:#8A90A6;
+    --line:#E3E7F1; --line-strong:#D2D8E8;
+    --accent:#F0402B; --accent-2:#FF7A3C; --accent-soft:#FDE7E2;
+    --ok:#0E9F63; --ok-soft:#E4F5EC; --warn:#C97A00; --warn-soft:#FBF0DC; --info:#3B6FF5; --info-soft:#E6EDFD;
+    --shadow:0 1px 2px rgba(23,27,46,.05),0 8px 24px -12px rgba(23,27,46,.14);
+    --maxw:730px;
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#111527; --surface:#1A1F38; --surface-2:#232946; --sunken:#161B31;
+      --ink:#EAEDF8; --ink-2:#AEB6D2; --ink-3:#727A98;
+      --line:rgba(255,255,255,.09); --line-strong:rgba(255,255,255,.16);
+      --accent:#FF6552; --accent-2:#FF9457; --accent-soft:rgba(255,101,82,.14);
+      --ok:#35C98A; --ok-soft:rgba(53,201,138,.13); --warn:#F2A93B; --warn-soft:rgba(242,169,59,.13); --info:#6E96FF; --info-soft:rgba(110,150,255,.13);
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+  [data-theme="dark"]{
+    --bg:#111527; --surface:#1A1F38; --surface-2:#232946; --sunken:#161B31;
+    --ink:#EAEDF8; --ink-2:#AEB6D2; --ink-3:#727A98;
+    --line:rgba(255,255,255,.09); --line-strong:rgba(255,255,255,.16);
+    --accent:#FF6552; --accent-2:#FF9457; --accent-soft:rgba(255,101,82,.14);
+    --ok:#35C98A; --ok-soft:rgba(53,201,138,.13); --warn:#F2A93B; --warn-soft:rgba(242,169,59,.13); --info:#6E96FF; --info-soft:rgba(110,150,255,.13);
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 30px -14px rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; scroll-padding-top:80px}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+    font-size:16px; line-height:1.62; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; line-height:1.12; margin:0}
+  code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  a{color:inherit}
+
+  /* ── Topbar ── */
+  .top{position:sticky; top:0; z-index:40; background:color-mix(in srgb,var(--bg) 88%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .top-in{display:flex; align-items:center; gap:12px; max-width:1180px; margin:0 auto; padding:11px 20px}
+  .brand{display:flex; align-items:center; gap:9px; font-family:"Bricolage Grotesque"; font-weight:800; letter-spacing:-.01em; font-size:16px}
+  .brand .dot{width:22px; height:22px; border-radius:7px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:grid; place-items:center; color:#fff; font-size:13px; flex:none}
+  .top .search{margin-left:auto; position:relative; flex:1; max-width:280px}
+  .top .search input{width:100%; background:var(--surface); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px 12px 8px 32px; font:inherit; font-size:14px; outline:none}
+  .top .search input:focus{border-color:var(--accent)}
+  .top .search svg{position:absolute; left:10px; top:50%; transform:translateY(-50%); opacity:.5}
+  .icon-btn{background:var(--surface); border:1px solid var(--line); color:var(--ink); width:36px; height:36px; border-radius:10px; cursor:pointer; display:grid; place-items:center; flex:none}
+  .icon-btn:hover{border-color:var(--accent)}
+  #navToggle{display:none}
+
+  /* ── Shell ── */
+  .shell{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:250px minmax(0,1fr); gap:40px; padding:0 20px}
+  /* ── Sidebar ── */
+  nav.toc{position:sticky; top:60px; align-self:start; height:calc(100vh - 60px); overflow-y:auto; padding:26px 0 60px; font-size:14px}
+  nav.toc .grp{font-family:"Bricolage Grotesque"; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-3); margin:22px 0 7px}
+  nav.toc a{display:block; text-decoration:none; color:var(--ink-2); padding:5px 12px; border-radius:8px; border-left:2px solid transparent}
+  nav.toc a:hover{background:var(--surface-2); color:var(--ink)}
+  nav.toc a.active{color:var(--accent); border-left-color:var(--accent); background:var(--accent-soft); font-weight:600}
+  nav.toc a.hide{display:none}
+
+  main{min-width:0; padding:34px 0 120px}
+
+  /* ── Hero ── */
+  .hero{margin-bottom:34px}
+  .eyebrow{font-family:"IBM Plex Mono"; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); font-weight:500}
+  .hero h1{font-size:clamp(34px,6vw,52px); font-weight:800; letter-spacing:-.02em; margin:12px 0 14px}
+  .hero p.lead{font-size:19px; color:var(--ink-2); max-width:62ch; margin:0}
+  .quick{display:flex; flex-wrap:wrap; gap:9px; margin-top:22px}
+  .quick a{text-decoration:none; background:var(--surface); border:1px solid var(--line); color:var(--ink); border-radius:999px; padding:7px 14px; font-size:13.5px; font-weight:500; box-shadow:var(--shadow)}
+  .quick a:hover{border-color:var(--accent); color:var(--accent)}
+
+  section{scroll-margin-top:74px; margin-top:52px}
+  section > h2{font-size:26px; font-weight:800; letter-spacing:-.01em; margin-bottom:6px; display:flex; align-items:center; gap:11px}
+  section > h2 .num{font-family:"IBM Plex Mono"; font-size:14px; color:var(--accent); font-weight:500; border:1px solid var(--line-strong); border-radius:7px; padding:2px 8px}
+  .sec-sub{color:var(--ink-2); margin:0 0 20px; max-width:66ch}
+  h3{font-size:18px; font-weight:700; margin:30px 0 8px}
+  p{margin:0 0 14px; max-width:70ch}
+  ul,ol{margin:0 0 16px; padding-left:22px; max-width:70ch}
+  li{margin:5px 0}
+  strong{font-weight:600}
+  .lbl{font-family:"IBM Plex Mono"; font-size:12px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:1px 7px; white-space:nowrap}
+
+  /* ── App header block ── */
+  .app-head{display:flex; gap:15px; align-items:flex-start; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow); margin-bottom:8px}
+  .app-ic{width:46px; height:46px; border-radius:12px; display:grid; place-items:center; font-size:24px; flex:none; background:var(--surface-2)}
+  .app-head h2{margin:0; font-size:22px}
+  .app-head .role{color:var(--ink-2); margin:3px 0 0; font-size:15px}
+  .app-meta{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:9px; font-size:12.5px; color:var(--ink-3)}
+  .app-meta b{color:var(--ink-2); font-weight:600}
+
+  /* ── Callouts ── */
+  .call{border-radius:12px; padding:13px 16px 13px 15px; margin:16px 0; border:1px solid; font-size:14.5px; display:flex; gap:11px}
+  .call .k{font-weight:700; font-family:"Bricolage Grotesque"}
+  .call p{margin:0; max-width:none}
+  .call.tip{background:var(--ok-soft); border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+  .call.tip .k{color:var(--ok)}
+  .call.warn{background:var(--warn-soft); border-color:color-mix(in srgb,var(--warn) 34%,transparent)}
+  .call.warn .k{color:var(--warn)}
+  .call.note{background:var(--info-soft); border-color:color-mix(in srgb,var(--info) 30%,transparent)}
+  .call.note .k{color:var(--info)}
+
+  /* ── Steps ── */
+  .steps{list-style:none; padding:0; counter-reset:s; margin:16px 0}
+  .steps li{counter-increment:s; position:relative; padding:0 0 0 40px; margin:0 0 14px; min-height:26px}
+  .steps li::before{content:counter(s); position:absolute; left:0; top:-1px; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; font-family:"IBM Plex Mono"; font-size:13px; font-weight:500; display:grid; place-items:center}
+
+  /* ── Feature list ── */
+  .feat{border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:16px 0; background:var(--surface)}
+  .feat > div{padding:14px 18px; border-top:1px solid var(--line)}
+  .feat > div:first-child{border-top:none}
+  .feat h4{font-size:15.5px; font-weight:700; margin:0 0 4px; display:flex; align-items:center; gap:8px}
+  .feat h4 .e{font-size:17px}
+  .feat p{margin:0; color:var(--ink-2); font-size:14.5px; max-width:none}
+
+  /* ── Table ── */
+  .tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:14px; margin:18px 0}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:520px}
+  th,td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:var(--surface-2); font-family:"Bricolage Grotesque"; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-2)}
+  tr:last-child td{border-bottom:none}
+  td b{color:var(--accent); font-weight:600}
+
+  /* ── Ecosystem map ── */
+  .map{border:1px solid var(--line); border-radius:18px; background:linear-gradient(180deg,var(--surface),var(--bg)); padding:22px; margin:18px 0; box-shadow:var(--shadow)}
+  .flow{display:flex; align-items:stretch; gap:0; overflow-x:auto; padding-bottom:6px}
+  .stage{flex:1; min-width:118px; text-align:center; position:relative; padding:0 6px}
+  .stage:not(:last-child)::after{content:"→"; position:absolute; right:-8px; top:26px; color:var(--accent); font-size:18px; z-index:2}
+  .stage .b{background:var(--surface); border:1px solid var(--line-strong); border-radius:13px; padding:13px 8px; box-shadow:var(--shadow)}
+  .stage .e{font-size:24px}
+  .stage .n{font-family:"Bricolage Grotesque"; font-weight:700; font-size:13px; margin-top:4px}
+  .stage .app{font-size:11px; color:var(--ink-3); margin-top:2px}
+  .sats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:16px}
+  .sat{background:var(--surface-2); border:1px solid var(--line); border-radius:11px; padding:11px 13px; font-size:13px}
+  .sat b{font-family:"Bricolage Grotesque"; display:block; font-size:13.5px; margin-bottom:2px}
+  .sat span{color:var(--ink-2)}
+
+  .divider{height:1px; background:var(--line); margin:44px 0}
+  dl.gloss{margin:16px 0}
+  dl.gloss div{padding:12px 0; border-bottom:1px solid var(--line); display:grid; grid-template-columns:170px 1fr; gap:16px}
+  dl.gloss dt{font-family:"IBM Plex Mono"; font-weight:500; color:var(--accent); font-size:14px}
+  dl.gloss dd{margin:0; color:var(--ink-2); font-size:14.5px}
+
+  footer{border-top:1px solid var(--line); margin-top:70px; padding:26px 0; color:var(--ink-3); font-size:13px; text-align:center}
+
+  .backdrop{display:none}
+  @media(max-width:920px){
+    .shell{grid-template-columns:1fr; gap:0}
+    #navToggle{display:grid}
+    nav.toc{position:fixed; top:0; left:0; height:100dvh; width:270px; background:var(--surface); border-right:1px solid var(--line); transform:translateX(-100%); transition:transform .22s ease; z-index:60; padding:20px 16px 60px; box-shadow:var(--shadow)}
+    nav.toc.open{transform:none}
+    .backdrop.show{display:block; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:50}
+    main{padding-top:26px}
+    dl.gloss div{grid-template-columns:1fr; gap:3px}
+  }
+  @media print{
+    .top,nav.toc,.quick,#navToggle{display:none!important}
+    .shell{grid-template-columns:1fr; max-width:none}
+    section,.app-head,.feat,.map{break-inside:avoid}
+    body{font-size:12px}
+  }
+</style>
+
+<div class="top">
+  <div class="top-in">
+    <button class="icon-btn" id="navToggle" aria-label="Sommaire">☰</button>
+    <div class="brand"><span class="dot">B</span> Manuel de B&amp;M</div>
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+      <input id="q" type="search" placeholder="Filtrer le sommaire…" autocomplete="off">
+    </div>
+    <button class="icon-btn" id="themeBtn" aria-label="Thème">◐</button>
+  </div>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+
+<div class="shell">
+  <nav class="toc" id="toc">
+    <div class="grp">Comprendre</div>
+    <a href="#demarrer">Démarre ici</a>
+    <a href="#carte">La carte de l'écosystème</a>
+    <a href="#flux">Le flux, du lot à la vente</a>
+    <a href="#index">« Je veux… » (raccourcis)</a>
+    <div class="grp">Les applications</div>
+    <a href="#stockvault">1 · StockVault</a>
+    <a href="#recherche">2 · Recherche universelle</a>
+    <a href="#ventes">3 · Suivi des ventes</a>
+    <a href="#annonces">4 · Générateur d'annonces</a>
+    <a href="#analyse">5 · Analyse de lot</a>
+    <a href="#rentabilite">6 · Rentabilité par lot</a>
+    <a href="#conseiller">7 · Mon Conseiller (IA)</a>
+    <a href="#partstack">8 · PartStack (pièces)</a>
+    <a href="#site">9 · Site public</a>
+    <a href="#dimes">10 · Dîmes &amp; Offrandes</a>
+    <div class="grp">Fonctions transversales</div>
+    <a href="#transversal">Ce qui relie tout</a>
+    <div class="grp">Pour aller plus loin</div>
+    <a href="#coulisses">Dans les coulisses</a>
+    <a href="#glossaire">Glossaire</a>
+    <a href="#astuces">Astuces &amp; pièges</a>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">Reconditionné · Paris 🇫🇷 + Vancouver 🇨🇦</div>
+      <h1>Tout B&amp;M, expliqué simplement.</h1>
+      <p class="lead">Ce manuel décrit chaque application de l'écosystème : à quoi elle sert, comment on s'en sert, et comment elles se parlent entre elles. Si tu es nouveau, lis « Démarre ici ». Si tu cherches à faire une chose précise, va au tableau <a href="#index">« Je veux… »</a>.</p>
+      <div class="quick">
+        <a href="#stockvault">📦 Gérer le stock</a>
+        <a href="#ventes">💰 Enregistrer une vente</a>
+        <a href="#annonces">✍️ Rédiger une annonce</a>
+        <a href="#analyse">🔎 Analyser un lot à acheter</a>
+        <a href="#rentabilite">📊 Rentabilité d'un lot</a>
+        <a href="#conseiller">🧠 Demander à l'IA</a>
+      </div>
+    </div>
+
+    <section id="demarrer">
+      <h2>Démarre ici</h2>
+      <p class="sec-sub">B&amp;M achète des téléphones et de l'électronique d'occasion par <em>lots</em>, les remet en état, puis les revend. Tout l'outillage tourne autour de ce cycle. Voici le tour en 5 minutes.</p>
+      <ul class="steps">
+        <li><strong>Le point d'entrée, c'est StockVault.</strong> Tu ouvres l'app, tu tapes ton code (<span class="lbl">XXXX</span>), et tu tombes sur le <em>lanceur</em> : une grille de cartes, une par outil. Tout part de là.</li>
+        <li><strong>Ton stock vit à deux endroits qui restent synchronisés</strong> : un grand <strong>Google Sheet</strong> (le registre) et une base rapide <strong>Firebase</strong> (ce que les apps lisent). Une synchro automatique les garde identiques — tu n'as rien à faire.</li>
+        <li><strong>Chaque outil fait une chose</strong> : chercher, vendre, rédiger une annonce, estimer un lot, suivre la rentabilité, gérer les pièces détachées, ou discuter avec l'assistant IA.</li>
+        <li><strong>Deux rôles</strong> : <strong>Admin</strong> (toi — accès à tout) et <strong>Standard</strong> (un vendeur — voit le stock, peut déplacer et enregistrer, mais pas supprimer ni modifier les réglages).</li>
+      </ul>
+      <div class="call tip"><span class="k">💡</span><p>Tu n'as jamais besoin de « sauvegarder » à la main. Dès que tu changes quelque chose, c'est enregistré et synchronisé. Et chaque nuit, une copie complète part automatiquement dans Google Drive.</p></div>
+    </section>
+
+    <section id="carte">
+      <h2>La carte de l'écosystème</h2>
+      <p class="sec-sub">Dix applications, un seul cerveau : ton stock. La plupart lisent et écrivent dans la même base, ce qui fait que tout est cohérent partout, tout le temps.</p>
+      <div class="map">
+        <div class="flow" role="img" aria-label="Flux : Acheter, Stocker, Annoncer, Vendre, Analyser la rentabilité">
+          <div class="stage"><div class="b"><div class="e">🔎</div><div class="n">Acheter</div><div class="app">Analyse de lot</div></div></div>
+          <div class="stage"><div class="b"><div class="e">📦</div><div class="n">Stocker</div><div class="app">StockVault</div></div></div>
+          <div class="stage"><div class="b"><div class="e">✍️</div><div class="n">Annoncer</div><div class="app">Générateur</div></div></div>
+          <div class="stage"><div class="b"><div class="e">💰</div><div class="n">Vendre</div><div class="app">Suivi des ventes</div></div></div>
+          <div class="stage"><div class="b"><div class="e">📊</div><div class="n">Mesurer</div><div class="app">Rentabilité</div></div></div>
+        </div>
+        <div class="sats">
+          <div class="sat"><b>🧠 Mon Conseiller</b><span>L'IA qui voit tout ton stock, tes ventes et tes pièces pour te conseiller.</span></div>
+          <div class="sat"><b>🔧 PartStack</b><span>Ton inventaire de pièces détachées, relié au stock pour suggérer des réparations.</span></div>
+          <div class="sat"><b>🔍 Recherche universelle</b><span>Retrouve n'importe quoi — par texte, photo ou voix.</span></div>
+          <div class="sat"><b>🌐 Site public</b><span>Vitrine en ligne qui montre les articles disponibles.</span></div>
+          <div class="sat"><b>🙏 Dîmes &amp; Offrandes</b><span>Reçoit une part des revenus (voir la section dédiée).</span></div>
+          <div class="sat"><b>🛡️ Journal &amp; sauvegardes</b><span>Trace de toutes les actions + copies automatiques.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="flux">
+      <h2>Le flux, du lot à la vente</h2>
+      <p class="sec-sub">Le parcours d'un appareil, du moment où tu repères un lot à acheter jusqu'à sa vente et au calcul du bénéfice.</p>
+      <ul class="steps">
+        <li><strong>Tu repères un lot</strong> (une liste d'appareils à vendre en gros). Tu la mets dans un Google Sheet et tu l'ouvres avec <a href="#analyse"><strong>Analyse de lot</strong></a> → l'app estime la valeur de revente et le <em>prix maximum</em> à payer. Tu négocies, tu achètes, tu enregistres le lot.</li>
+        <li><strong>Tu crées le lot dans <a href="#rentabilite">Rentabilité</a></strong> → l'app crée automatiquement les onglets du lot dans le Sheet (un pour les téléphones, un pour les palettes).</li>
+        <li><strong>Tu renseignes les appareils</strong> dans ces onglets → ils apparaissent dans <a href="#stockvault"><strong>StockVault</strong></a>, ton stock, où tu les ranges par <em>dossier</em> (Paris, Vancouver, Dakar…).</li>
+        <li><strong>Tu rédiges les annonces</strong> avec le <a href="#annonces"><strong>Générateur</strong></a> et tu les publies sur les marketplaces. Les articles disponibles s'affichent aussi sur le <a href="#site">site public</a>.</li>
+        <li><strong>Une vente tombe</strong> → tu l'enregistres dans <a href="#ventes"><strong>Suivi des ventes</strong></a>. L'article disparaît du stock et du site.</li>
+        <li><strong>Tu mesures</strong> : <a href="#rentabilite"><strong>Rentabilité</strong></a> compare ce que le lot a coûté (achat + dépenses) à ce qu'il a rapporté (les ventes) — automatiquement, en dollars canadiens.</li>
+      </ul>
+      <div class="call note"><span class="k">↔</span><p>À chaque vente, le système sait <strong>de quel lot</strong> vient l'appareil, grâce à l'onglet où sa référence a été saisie. C'est ce qui permet de calculer la rentabilité sans que tu aies à trier quoi que ce soit.</p></div>
+    </section>
+
+    <section id="index">
+      <h2>« Je veux… » — les raccourcis</h2>
+      <p class="sec-sub">Le tableau à garder sous la main : ton besoin à gauche, l'endroit où aller à droite.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Je veux…</th><th>Va dans…</th><th>Comment</th></tr></thead>
+        <tbody>
+          <tr><td>Voir / ranger mon stock</td><td><b>StockVault</b> → Dossiers</td><td>Ouvre un dossier, ou cherche une réf dans la barre</td></tr>
+          <tr><td>Ajouter un article à la main</td><td><b>StockVault</b> → +</td><td>Bouton « Ajouter » dans un dossier</td></tr>
+          <tr><td>Enregistrer une vente</td><td><b>Suivi des ventes</b></td><td>Onglet « Nouvelle vente ». Ou depuis la fiche → « 💵 Enregistrer la vente »</td></tr>
+          <tr><td>Noter une dépense / charge</td><td><b>Suivi des ventes</b> ou <b>Rentabilité</b></td><td>Plateforme « CHARGE » (général) ou bloc dépenses d'un lot</td></tr>
+          <tr><td>Écrire une annonce</td><td><b>Générateur d'annonces</b></td><td>Ou depuis la fiche → « ✍️ Rédiger une annonce »</td></tr>
+          <tr><td>Savoir si un lot vaut le coup</td><td><b>Analyse de lot</b></td><td>Colle l'URL du Sheet du lot</td></tr>
+          <tr><td>Savoir si un lot est rentable</td><td><b>Rentabilité par lot</b></td><td>Renseigne le prix d'achat + les dépenses</td></tr>
+          <tr><td>Retrouver un appareil par photo</td><td><b>Recherche universelle</b></td><td>Scan photo (réf ou reconnaissance visuelle)</td></tr>
+          <tr><td>Un conseil, un calcul, une idée</td><td><b>Mon Conseiller</b></td><td>Pose ta question en langage normal</td></tr>
+          <tr><td>Gérer mes pièces détachées</td><td><b>PartStack</b></td><td>Ajouter, pointer l'inventaire, suggérer des réparations</td></tr>
+          <tr><td>Transformer un tel HS en pièce</td><td><b>StockVault</b> → fiche</td><td>Bouton « 🔧 Transformer en pièce »</td></tr>
+          <tr><td>Voir qui a fait quoi</td><td><b>StockVault</b> → Réglages admin</td><td>« · journal · » (code <span class="lbl">XXXX</span>)</td></tr>
+          <tr><td>Savoir ce qu'un vendeur me doit</td><td><b>Suivi des ventes</b> → Dashboard</td><td>Carte « Reversements vendeurs »</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- 1 STOCKVAULT -->
+    <section id="stockvault">
+      <div class="app-head">
+        <div class="app-ic">📦</div>
+        <div>
+          <h2>1 · StockVault</h2>
+          <p class="role">Le point d'entrée de tout, et la gestion de ton stock d'appareils.</p>
+          <div class="app-meta"><span><b>Où :</b> l'app principale (écran de code au démarrage)</span><span><b>Qui :</b> Admin + Standard</span></div>
+        </div>
+      </div>
+      <p>StockVault fait deux choses. C'est d'abord le <strong>lanceur</strong> : après le code, tu vois une grille de cartes qui ouvrent tous les autres outils. C'est ensuite ton <strong>catalogue de stock</strong> : chaque appareil a une fiche avec ses caractéristiques, ses photos, son prix et ses défauts.</p>
+
+      <h3>Ce que tu peux y faire</h3>
+      <div class="feat">
+        <div><h4><span class="e">🔐</span> Se connecter par code</h4><p>Un code à 4 chiffres (<span class="lbl">XXXX</span>) t'identifie. Selon ton rôle (Admin ou Standard), tu vois plus ou moins d'options.</p></div>
+        <div><h4><span class="e">🗂️</span> Ranger par dossiers</h4><p>Tu organises le stock en dossiers (Paris, Vancouver, Dakar…). Un article peut être déplacé d'un dossier à l'autre. Dans un dossier, une <strong>barre de recherche</strong> filtre par réf ou nom — et tu peux taper la réf <strong>sans les tirets</strong> (ex. <span class="mono">I15PMHS</span> trouve <span class="mono">I15PM-HS</span>).</p></div>
+        <div><h4><span class="e">👁️</span> 3 vues</h4><p>Mosaïque, Liste ou Compacte — au choix, mémorisé pour la prochaine fois.</p></div>
+        <div><h4><span class="e">📄</span> La fiche d'un article</h4><p>Specs, photos, prix, état, défaut. Les actions Admin : Modifier, Rédiger une annonce, Enregistrer la vente, Transformer en pièce, Partager, Déplacer, Supprimer.</p></div>
+        <div><h4><span class="e">🔧</span> Journal Historique / Réparations</h4><p>Sur chaque fiche (Admin uniquement), un carnet daté où tu notes les réparations et tout historique de l'appareil. <strong>Jamais visible</strong> dans les annonces ni côté public.</p></div>
+        <div><h4><span class="e">🌐</span> Afficher / masquer sur le site</h4><p>Un interrupteur décide si l'article apparaît sur le <a href="#site">site public</a>.</p></div>
+        <div><h4><span class="e">⚙️</span> Réglages admin</h4><p>Gérer les utilisateurs (créer, rôle, code), + un accès discret au <a href="#transversal">journal d'activité</a> et à cette <strong>Aide</strong>.</p></div>
+      </div>
+      <div class="call note"><span class="k">↔</span><p><strong>Liens :</strong> le stock affiché vient de la base, alimentée par le Google Sheet. Depuis une fiche, tu sautes directement vers <a href="#ventes">Suivi des ventes</a> (article pré-rempli) ou <a href="#annonces">le Générateur</a>. Le bouton « Transformer en pièce » envoie l'appareil vers <a href="#partstack">PartStack</a>.</p></div>
+    </section>
+
+    <!-- 2 RECHERCHE -->
+    <section id="recherche">
+      <div class="app-head">
+        <div class="app-ic">🔍</div>
+        <div>
+          <h2>2 · Recherche universelle</h2>
+          <p class="role">Retrouver n'importe quoi, partout, par texte / photo / voix.</p>
+          <div class="app-meta"><span><b>Où :</b> carte du lanceur</span><span><b>Cherche dans :</b> stock, pièces, ventes, tous les onglets du Sheet</span></div>
+        </div>
+      </div>
+      <p>Un moteur de recherche unique qui balaie <strong>toutes</strong> tes sources en même temps. Utile quand tu ne sais plus où se trouve un appareil, ou pour comparer un prix passé.</p>
+      <div class="feat">
+        <div><h4><span class="e">⌨️</span> Recherche texte</h4><p>Tape un modèle, une réf, un mot-clé. Insensible aux tirets. Te sort les articles, les pièces compatibles et les prix de ventes passées.</p></div>
+        <div><h4><span class="e">📷</span> Scan photo</h4><p>Prends une photo : soit l'app <strong>lit la référence/étiquette</strong>, soit elle <strong>reconnaît l'appareil</strong> visuellement et propose les correspondances de ton stock.</p></div>
+        <div><h4><span class="e">🗂️</span> Tout le classeur</h4><p>Elle cherche aussi dans les anciens onglets du Sheet (lots passés), pas seulement le stock actif.</p></div>
+      </div>
+    </section>
+
+    <!-- 3 VENTES -->
+    <section id="ventes">
+      <div class="app-head">
+        <div class="app-ic">💰</div>
+        <div>
+          <h2>3 · Suivi des ventes</h2>
+          <p class="role">Enregistrer chaque vente et suivre l'argent qui rentre.</p>
+          <div class="app-meta"><span><b>Où :</b> carte du lanceur</span><span><b>3 onglets :</b> Nouvelle vente · Historique · Dashboard</span></div>
+        </div>
+      </div>
+      <p>Le journal de caisse de B&amp;M. Chaque vente y est saisie ; l'app calcule tout en <strong>dollars canadiens (CAD)</strong>, même si tu vends en euros.</p>
+      <div class="feat">
+        <div><h4><span class="e">➕</span> Enregistrer une vente</h4><p>Date, article, plateforme, prix (EUR / CAD / XOF — converti automatiquement en CAD), moyen de paiement. L'article vendu disparaît du stock et du site public.</p></div>
+        <div><h4><span class="e">🧾</span> Noter une charge</h4><p>La « plateforme » spéciale <span class="lbl">CHARGE</span> sert à enregistrer une dépense générale (pas de moyen de paiement requis).</p></div>
+        <div><h4><span class="e">📊</span> Dashboard</h4><p>Totaux du mois, chiffre d'affaires par plateforme, net. Vue d'ensemble en un coup d'œil.</p></div>
+        <div><h4><span class="e">💸</span> Reversements vendeurs</h4><p>Une carte du Dashboard qui suit ce que tes vendeurs tiers (Julio, Charlotte, Fred, Burkina…) doivent te <strong>reverser</strong> sur les ventes non-cash, avec une échéance et un bouton « ✓ Reçu ».</p></div>
+        <div><h4><span class="e">📋</span> Historique</h4><p>Toutes les ventes passées, avec filtres par mois, canal et recherche.</p></div>
+      </div>
+      <div class="call note"><span class="k">↔</span><p><strong>Liens :</strong> depuis une fiche StockVault, « 💵 Enregistrer la vente » ouvre cet outil avec l'article déjà choisi. Les ventes alimentent la <a href="#rentabilite">Rentabilité par lot</a>.</p></div>
+    </section>
+
+    <!-- 4 ANNONCES -->
+    <section id="annonces">
+      <div class="app-head">
+        <div class="app-ic">✍️</div>
+        <div>
+          <h2>4 · Générateur d'annonces</h2>
+          <p class="role">Écrire des annonces marketplace prêtes à publier, avec l'IA.</p>
+          <div class="app-meta"><span><b>Où :</b> carte du lanceur (Admin)</span><span><b>Plateformes :</b> LeBonCoin · Vinted · Rakuten · Facebook</span></div>
+        </div>
+      </div>
+      <p>À partir d'un produit, l'IA rédige un <strong>titre</strong> et une <strong>description</strong> adaptés à chaque marketplace choisie. Fini le copier-coller laborieux.</p>
+      <div class="feat">
+        <div><h4><span class="e">🤖</span> Génération multi-plateformes</h4><p>Coche les marketplaces, l'IA écrit une annonce sur mesure pour chacune, ton et format adaptés.</p></div>
+        <div><h4><span class="e">🏷️</span> Marqueur invisible</h4><p>Un petit code prononçable (ex. <span class="mono">#voquvub</span>) est glissé en fin de description. Il permet de <strong>retrouver l'article</strong> à partir de l'annonce, plus tard.</p></div>
+        <div><h4><span class="e">💹</span> Repère de prix</h4><p>Un aperçu du prix du marché par plateforme t'aide à te positionner.</p></div>
+      </div>
+      <div class="call note"><span class="k">↔</span><p><strong>Liens :</strong> lançable directement depuis une fiche StockVault (« ✍️ Rédiger une annonce »). Les annonces générées sont archivées par référence.</p></div>
+    </section>
+
+    <!-- 5 ANALYSE DE LOT -->
+    <section id="analyse">
+      <div class="app-head">
+        <div class="app-ic">🔎</div>
+        <div>
+          <h2>5 · Analyse de lot</h2>
+          <p class="role">Avant d'acheter : estimer ce que vaut un lot et jusqu'à combien payer.</p>
+          <div class="app-meta"><span><b>Où :</b> carte du lanceur</span><span><b>Entrée :</b> l'URL d'un Google Sheet</span></div>
+        </div>
+      </div>
+      <p>Le garde-fou de l'achat. Tu lui donnes la liste d'un lot, il te dit combien tu peux espérer en tirer et le <strong>prix maximum</strong> à ne pas dépasser.</p>
+      <ul class="steps">
+        <li>Mets la liste du lot dans un Google Sheet (un onglet : marque, modèle, capacité, état, défaut, quantité).</li>
+        <li>Ouvre Analyse de lot, colle l'<strong>URL du Sheet</strong>, choisis l'onglet.</li>
+        <li>Lis le verdict : valeur de revente estimée, <strong>prix max d'achat</strong> conseillé, niveau de confiance.</li>
+        <li><strong>💾 Enregistre le lot.</strong> Tu pourras plus tard y noter le prix réellement payé pour comparer.</li>
+      </ul>
+      <div class="call warn"><span class="k">⚠️</span><p>Le moteur a tendance à <strong>surestimer les appareils défectueux</strong>. Règle maison : un défaut réparable ≈ 50 % de la valeur ; vise une marge de 30 %.</p></div>
+    </section>
+
+    <!-- 6 RENTABILITE -->
+    <section id="rentabilite">
+      <div class="app-head">
+        <div class="app-ic">📊</div>
+        <div>
+          <h2>6 · Rentabilité par lot</h2>
+          <p class="role">Savoir, lot par lot, si tu gagnes de l'argent — coût contre revenu, en CAD.</p>
+          <div class="app-meta"><span><b>Où :</b> carte du lanceur</span><span><b>Calcul :</b> 100 % automatique</span></div>
+        </div>
+      </div>
+      <p>Le tableau de bord financier de chaque lot. Il répond à une seule question : <em>« ce lot, il m'a rapporté ou pas ? »</em></p>
+      <h3>Créer un lot = créer ses onglets</h3>
+      <p>Quand tu crées un lot (bouton « + Nouveau lot »), tu coches <strong>📱 Téléphones</strong> et/ou <strong>📦 Palettes</strong>. L'app crée alors automatiquement les onglets correspondants dans le Google Sheet, nommés <span class="mono">Nom du lot Tels_IA</span> / <span class="mono">Nom du lot Palette_IA</span>, au même format que ton onglet de référence. Tu n'as plus qu'à y saisir les appareils.</p>
+      <div class="feat">
+        <div><h4><span class="e">💵</span> Prix d'achat + dépenses</h4><p>Tu renseignes le prix payé, puis les dépenses (transport, réparations, douane…). Les dépenses vivent <strong>dans l'onglet du lot</strong> (le Sheet est la source) : tu peux les modifier ou supprimer directement dans le Sheet, l'app suit. Les dépenses « générales » vont dans la colonne CHARGE.</p></div>
+        <div><h4><span class="e">🔗</span> Ventes rattachées toutes seules</h4><p>Chaque vente est attribuée à son lot via l'onglet où la référence a été saisie. Aucun tri manuel.</p></div>
+        <div><h4><span class="e">📈</span> Le P&amp;L</h4><p>Coût (achat + dépenses) vs revenu (ventes réelles), marge, taux d'écoulement (vendus / total), point mort — le tout en CAD.</p></div>
+        <div><h4><span class="e">🗑️</span> Supprimer / renommer</h4><p>Supprimer un lot propose aussi de supprimer ses onglets (avec confirmation). Renommer le lot renomme les onglets.</p></div>
+      </div>
+      <div class="call tip"><span class="k">💡</span><p>Bonne pratique : crée le lot dans Rentabilité <em>avant</em> de saisir ses appareils. Comme ça ils tombent dans le bon onglet dès le départ, et tout se rattache sans effort.</p></div>
+    </section>
+
+    <!-- 7 CONSEILLER -->
+    <section id="conseiller">
+      <div class="app-head">
+        <div class="app-ic">🧠</div>
+        <div>
+          <h2>7 · Mon Conseiller</h2>
+          <p class="role">Une IA qui connaît ton métier ET tes vraies données, pour te conseiller.</p>
+          <div class="app-meta"><span><b>Où :</b> carte du lanceur (Admin)</span><span><b>Type :</b> chat, en langage normal</span></div>
+        </div>
+      </div>
+      <p>Ce n'est pas un chatbot générique : il <strong>lit tes données réelles</strong> et raisonne dessus. Tu lui parles comme à un associé.</p>
+      <div class="feat">
+        <div><h4><span class="e">🔎</span> Il lit tout</h4><p>Stock article par article, pièces PartStack, historique des ventes, lots enregistrés, reversements, rentabilité. Il peut aussi chercher sur le web (prix, taux de change, douane…).</p></div>
+        <div><h4><span class="e">🔧</span> Il suggère des réparations</h4><p>Il croise tes <strong>appareils défectueux</strong> avec tes <strong>pièces compatibles</strong> en stock : « iPhone 12 écran cassé → tu as un écran iPhone 12 en pièces, réparable ».</p></div>
+        <div><h4><span class="e">🧮</span> Il calcule</h4><p>Marges, totaux, moyennes — à partir des vrais chiffres, sans approximation.</p></div>
+        <div><h4><span class="e">📌</span> Il retient</h4><p>Quand tu lui apprends un fait durable, il le mémorise et s'en resert aux prochaines discussions.</p></div>
+      </div>
+      <div class="call note"><span class="k">🖼️</span><p><em>À venir :</em> charger une photo directement dans la conversation pour qu'il reconnaisse l'article dans ta base.</p></div>
+    </section>
+
+    <!-- 8 PARTSTACK -->
+    <section id="partstack">
+      <div class="app-head">
+        <div class="app-ic">🔧</div>
+        <div>
+          <h2>8 · PartStack</h2>
+          <p class="role">L'inventaire de tes pièces détachées.</p>
+          <div class="app-meta"><span><b>Où :</b> carte du lanceur (app séparée)</span><span><b>Base :</b> distincte du stock d'appareils</span></div>
+        </div>
+      </div>
+      <p>Une app dédiée aux pièces (écrans, batteries, châssis, connecteurs…). Elle sait quelles pièces sont compatibles avec quels modèles.</p>
+      <div class="feat">
+        <div><h4><span class="e">➕</span> Ajouter / modifier une pièce</h4><p>Marque, modèle, type, état, notes, compatibilités, et jusqu'à <strong>4 photos</strong>. Chaque pièce a aussi son carnet Historique / Réparations.</p></div>
+        <div><h4><span class="e">🎛️</span> Filtres & recherche</h4><p>Filtre par marque et par type (batterie, écran…). Recherche insensible aux tirets.</p></div>
+        <div><h4><span class="e">📋</span> Mode Inventaire (pointage)</h4><p>Tu passes tes pièces en revue : <strong>✅ présente</strong> / <strong>❌ absente</strong>, avec une barre de progression et la <strong>date de dernière vérification</strong> par pièce. À la fin, tu peux supprimer les absentes d'un coup. Ta progression est sauvegardée : tu peux quitter et reprendre.</p></div>
+        <div><h4><span class="e">➡️</span> Réception depuis StockVault</h4><p>Un appareil HS « transformé en pièce » depuis StockVault arrive ici automatiquement, avec toutes ses infos et photos.</p></div>
+      </div>
+      <div class="call note"><span class="k">↔</span><p><strong>Liens :</strong> le <a href="#conseiller">Conseiller</a> croise PartStack avec le stock pour suggérer des réparations. Le bouton retour ↩︎ ramène au lanceur StockVault.</p></div>
+    </section>
+
+    <!-- 9 SITE -->
+    <section id="site">
+      <div class="app-head">
+        <div class="app-ic">🌐</div>
+        <div>
+          <h2>9 · Site public (Ventes Rapides)</h2>
+          <p class="role">La vitrine en ligne qui montre le stock disponible aux clients.</p>
+          <div class="app-meta"><span><b>Où :</b> site web public</span><span><b>Langues :</b> Français / English</span></div>
+        </div>
+      </div>
+      <p>Un site vitrine bilingue qui affiche, en lecture seule, les appareils disponibles. Il se met à jour tout seul depuis la base : un article <strong>marqué visible</strong> apparaît ; un article vendu ou masqué disparaît.</p>
+      <div class="feat">
+        <div><h4><span class="e">🛍️</span> Catalogue</h4><p>Les clients parcourent les produits disponibles avec photos, état et prix. Une barre de recherche les aide à trouver.</p></div>
+        <div><h4><span class="e">🇫🇷🇬🇧</span> Bilingue</h4><p>Bascule FR / EN, détection automatique de la langue du visiteur.</p></div>
+        <div><h4><span class="e">👁️</span> Contrôle depuis StockVault</h4><p>C'est l'interrupteur « Afficher sur le site » de chaque fiche qui décide de la présence en ligne.</p></div>
+      </div>
+    </section>
+
+    <!-- 10 DIMES -->
+    <section id="dimes">
+      <div class="app-head">
+        <div class="app-ic">🙏</div>
+        <div>
+          <h2>10 · Dîmes &amp; Offrandes</h2>
+          <p class="role">Une app séparée pour la gestion des dîmes et offrandes.</p>
+          <div class="app-meta"><span><b>Où :</b> app indépendante</span><span><b>Doc dédié :</b> à venir</span></div>
+        </div>
+      </div>
+      <p>Dîmes &amp; Offrandes est une application <strong>à part</strong>, avec son propre usage. Ici, on ne décrit que <strong>son lien avec B&amp;M</strong> : comment le revenu y arrive.</p>
+      <div class="call note"><span class="k">↔</span><p><strong>Le lien :</strong> une part des revenus de B&amp;M est <strong>reportée comme revenu dans Dîmes &amp; Offrandes</strong>, qui calcule alors ce qui doit être donné (par ex. 10 % + 5 %) et suit le solde restant à donner. En clair : ce que B&amp;M gagne alimente le calcul des dons.</p></div>
+      <p>Le reste — comment saisir les revenus et dons, l'historique, les soldes — fera l'objet d'<strong>un manuel dédié</strong>, construit comme celui-ci.</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- TRANSVERSAL -->
+    <section id="transversal">
+      <h2>Ce qui relie tout</h2>
+      <p class="sec-sub">Des fonctions qui ne sont pas « une app » mais traversent tout l'écosystème.</p>
+      <div class="feat">
+        <div><h4><span class="e">🛡️</span> Journal d'activité (audit)</h4><p>Dans les réglages admin de StockVault, une entrée discrète « · journal · » (code <span class="lbl">XXXX</span>) montre <strong>tout ce qui se passe</strong> : connexions, ajouts, modifications, suppressions, ventes, navigation… par tous les utilisateurs, sur toutes les apps. Filtres par personne, type d'action, recherche.</p></div>
+        <div><h4><span class="e">💸</span> Reversements vendeurs</h4><p>Le suivi de ce que les vendeurs tiers doivent te reverser (voir <a href="#ventes">Suivi des ventes</a>). Certains (locaux) ne doivent que le non-cash ; d'autres (à distance) doivent tout reverser.</p></div>
+        <div><h4><span class="e">🔧</span> Historique / Réparations</h4><p>Le carnet interne présent sur chaque fiche article <em>et</em> chaque pièce PartStack, pour tracer les réparations. Jamais public.</p></div>
+        <div><h4><span class="e">➡️</span> Transformer en pièce</h4><p>Un appareil irréparable devient une pièce : StockVault le retire du stock et le crée dans PartStack avec ses infos et photos.</p></div>
+        <div><h4><span class="e">💾</span> Sauvegardes automatiques</h4><p>Chaque nuit, une copie complète de tes données (stock, pièces, ventes, lots, journal…) part dans un dossier Google Drive. Le journal d'audit est purgé au-delà de 90 jours pour rester léger.</p></div>
+        <div><h4><span class="e">🔄</span> La synchro Sheet ↔ Firebase</h4><p>Le moteur invisible qui garde le Google Sheet et la base Firebase identiques, en continu et en temps réel quand tu édites le Sheet. C'est lui qui fait que taper un appareil dans l'onglet d'un lot le fait apparaître dans le stock.</p></div>
+      </div>
+    </section>
+
+    <!-- COULISSES -->
+    <section id="coulisses">
+      <h2>Dans les coulisses</h2>
+      <p class="sec-sub">Tu n'as pas besoin de ça pour utiliser les apps — mais le comprendre aide à ne jamais être perdu.</p>
+      <div class="feat">
+        <div><h4><span class="e">📗</span> Le Google Sheet</h4><p>Le grand registre. Il contient l'onglet <span class="mono">DashBoard Sales</span> (les ventes) et un onglet par lot pour les appareils (nom finissant par <span class="mono">_IA</span>). C'est là que tu saisis les appareils d'un lot.</p></div>
+        <div><h4><span class="e">🔥</span> Firebase</h4><p>La base <em>rapide</em> que les apps lisent et écrivent. C'est ce qui rend StockVault, la recherche et l'IA instantanés.</p></div>
+        <div><h4><span class="e">🔄</span> La synchro</h4><p>Un script (Google Apps Script) recopie le Sheet vers Firebase et inversement, toutes les quelques minutes, et en temps réel dès que tu modifies le Sheet. Chaque article garde en mémoire <strong>son onglet d'origine</strong> — c'est ce qui relie l'article à son lot.</p></div>
+        <div><h4><span class="e">🖼️</span> Cloudinary</h4><p>Là où sont hébergées les photos. Les apps ne stockent que des liens légers, pas les images elles-mêmes.</p></div>
+        <div><h4><span class="e">🗄️</span> Les onglets « _IA »</h4><p>Le suffixe <span class="mono">_IA</span> marque un onglet de <strong>stock synchronisé</strong>. Les onglets sans ce suffixe sont d'anciens lots ou des notes, consultables via la Recherche universelle mais pas dans le stock actif.</p></div>
+      </div>
+    </section>
+
+    <!-- GLOSSAIRE -->
+    <section id="glossaire">
+      <h2>Glossaire</h2>
+      <p class="sec-sub">Les mots qui reviennent, en une phrase chacun.</p>
+      <dl class="gloss">
+        <div><dt>Lot</dt><dd>Un ensemble d'appareils achetés en gros. L'unité de base pour l'achat et la rentabilité.</dd></div>
+        <div><dt>Réf</dt><dd>La référence unique d'un appareil (ex. <span class="mono">I15PM-HS</span>). On peut la chercher sans les tirets.</dd></div>
+        <div><dt>Dossier</dt><dd>Un rangement du stock dans StockVault (ex. par ville). Un article peut changer de dossier librement.</dd></div>
+        <div><dt>Onglet _IA</dt><dd>Un onglet du Google Sheet qui contient le stock d'un lot et se synchronise avec les apps.</dd></div>
+        <div><dt>CHARGE</dt><dd>Une « plateforme » spéciale dans les ventes pour enregistrer une dépense générale.</dd></div>
+        <div><dt>Reversement</dt><dd>L'argent qu'un vendeur tiers a encaissé pour toi et doit te reverser.</dd></div>
+        <div><dt>Vendu</dt><dd>Un article marqué vendu disparaît du stock et du site (ses photos sont gardées 30 jours au cas où il revient).</dd></div>
+        <div><dt>Onglet d'origine</dt><dd>L'onglet où un article a été saisi — sert à savoir de quel lot il vient.</dd></div>
+        <div><dt>Dîme</dt><dd>Une part donnée sur un revenu, gérée dans l'app Dîmes &amp; Offrandes.</dd></div>
+      </dl>
+    </section>
+
+    <!-- ASTUCES -->
+    <section id="astuces">
+      <h2>Astuces &amp; pièges</h2>
+      <div class="call tip"><span class="k">💡</span><p><strong>Cherche sans les tirets.</strong> Partout (StockVault, Recherche, PartStack), tu peux taper une réf collée : <span class="mono">I15PMHS</span> retrouve <span class="mono">I15PM-HS</span>.</p></div>
+      <div class="call tip"><span class="k">💡</span><p><strong>Pars de la fiche.</strong> Pour vendre ou annoncer, ouvre d'abord la fiche de l'article : les boutons « Enregistrer la vente » et « Rédiger une annonce » pré-remplissent tout.</p></div>
+      <div class="call tip"><span class="k">💡</span><p><strong>Crée le lot avant d'y saisir les appareils.</strong> Ils tombent dans le bon onglet et se rattachent au lot automatiquement.</p></div>
+      <div class="call warn"><span class="k">⚠️</span><p><strong>Le prix, c'est CAD partout.</strong> Les ventes et la rentabilité raisonnent en dollars canadiens. Tu peux saisir en EUR / XOF : la conversion est figée au taux du jour.</p></div>
+      <div class="call warn"><span class="k">⚠️</span><p><strong>PartStack, 4 photos éditables.</strong> Si une pièce en a plus (venue d'un appareil transformé), les photos au-delà sont conservées mais pas modifiables dans le formulaire.</p></div>
+      <div class="call warn"><span class="k">⚠️</span><p><strong>PWA = pense à recharger.</strong> Après une mise à jour, tire l'écran vers le bas (ou rouvre l'app) pour charger la dernière version.</p></div>
+    </section>
+
+    <footer>
+      Manuel de B&amp;M Electronic — document de référence interne. Les codes d'accès sont masqués (<span class="mono">XXXX</span>). Un manuel dédié à Dîmes &amp; Offrandes suivra.
+    </footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, tb=document.getElementById('themeBtn');
+  function sysDark(){return matchMedia('(prefers-color-scheme:dark)').matches}
+  tb.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme')|| (sysDark()?'dark':'light');
+    root.setAttribute('data-theme', cur==='dark'?'light':'dark');
+  });
+  // mobile nav
+  var toc=document.getElementById('toc'), bd=document.getElementById('backdrop'), nt=document.getElementById('navToggle');
+  function closeNav(){toc.classList.remove('open');bd.classList.remove('show')}
+  nt&&nt.addEventListener('click',function(){toc.classList.toggle('open');bd.classList.toggle('show')});
+  bd.addEventListener('click',closeNav);
+  toc.addEventListener('click',function(e){if(e.target.tagName==='A')closeNav()});
+  // search filter
+  var q=document.getElementById('q'), links=[].slice.call(toc.querySelectorAll('a'));
+  q.addEventListener('input',function(){
+    var v=q.value.trim().toLowerCase();
+    links.forEach(function(a){a.classList.toggle('hide', v && a.textContent.toLowerCase().indexOf(v)<0)});
+  });
+  // scrollspy
+  var secs=[].slice.call(document.querySelectorAll('main section[id]'));
+  var byId={}; links.forEach(function(a){var h=a.getAttribute('href');if(h&&h[0]==='#')byId[h.slice(1)]=a});
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){
+        links.forEach(function(a){a.classList.remove('active')});
+        var a=byId[en.target.id]; if(a)a.classList.add('active');
+      }
+    });
+  },{rootMargin:'-45% 0px -50% 0px',threshold:0});
+  secs.forEach(function(s){obs.observe(s)});
+})();
+</script>

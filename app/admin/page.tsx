@@ -252,6 +252,16 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* Aide & documentation */}
+      <div style={{ marginTop: "28px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "16px" }}>
+        <div style={{ fontSize: "13px", fontWeight: 700, color: "white", marginBottom: "4px" }}>📖 Aide &amp; documentation</div>
+        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", marginBottom: "12px" }}>Le manuel complet de toutes les apps : rôles, fonctionnalités, liens entre elles.</div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <a href="/aide.html" target="_blank" rel="noopener" style={{ flex: 1, textAlign: "center", padding: "12px", borderRadius: "12px", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white", textDecoration: "none", fontSize: "13px", fontWeight: 700 }}>Ouvrir le manuel</a>
+          <a href="/aide.html" download="Manuel-BM.html" title="Télécharger" style={{ flexShrink: 0, padding: "12px 16px", borderRadius: "12px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "white", textDecoration: "none", fontSize: "14px", fontWeight: 700 }}>⬇︎</a>
+        </div>
+      </div>
+
       {/* Accès discret au journal d'activité (déverrouillé par code) */}
       <div style={{ textAlign: "center", padding: "34px 0 14px" }}>
         <button onClick={() => router.push("/admin/journal")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.13)", fontSize: "11px", cursor: "pointer", fontFamily: "inherit", letterSpacing: "2px" }}>· journal ·</button>
