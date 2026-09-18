@@ -14,6 +14,19 @@ export default function DossiersPage() {
   const [totalArticles, setTotalArticles] = useState(0);
   const [articles, setArticles]           = useState<any[]>([]);
   const [query, setQuery]                 = useState(() => (typeof window !== "undefined" ? sessionStorage.getItem("dos-search") || "" : ""));
+  // Recherches récentes (10) — mémoire locale par appareil, pour ne pas refaire les mêmes recherches.
+  const [recents, setRecents]             = useState<string[]>([]);
+  useEffect(() => { try { const r = JSON.parse(localStorage.getItem("sv_recent_searches") || "[]"); if (Array.isArray(r)) setRecents(r.filter((x: any) => typeof x === "string").slice(0, 10)); } catch {} }, []);
+  useEffect(() => { try { localStorage.setItem("sv_recent_searches", JSON.stringify(recents)); } catch {} }, [recents]);
+  // Enregistre la recherche quand la frappe se stabilise ; collapse la chaîne de frappe (« I15 » → « I15PM-HS »).
+  useEffect(() => {
+    const qv = query.trim();
+    if (qv.length < 3) return;
+    const t = setTimeout(() => { setRecents(prev => [qv, ...prev.filter(r => !qv.toLowerCase().startsWith(r.toLowerCase()))].slice(0, 10)); }, 900);
+    return () => clearTimeout(t);
+  }, [query]);
+  const removeRecent = (r: string) => setRecents(prev => prev.filter(x => x !== r));
+  const clearRecents = () => setRecents([]);
   const [ventesMois, setVentesMois]       = useState<{ ventes: number; ca: number } | null>(null);
   const [dashOpen, setDashOpen]           = useState(false); // admin : dashboard replié par défaut
   const [listingsByRef, setListingsByRef] = useState<Record<string, string[]> | null>(null);
@@ -212,6 +225,20 @@ export default function DossiersPage() {
             )}
           </div>
           <div style={{ position: "absolute", right: "-2px", top: "-10px", background: "#ff4d5a", color: "white", fontSize: "9px", fontWeight: 800, letterSpacing: "0.3px", padding: "3px 9px", borderRadius: "20px", boxShadow: "0 3px 9px rgba(255,77,90,0.45)" }}>NOUVEAU</div>
+
+          {/* Recherches récentes — visibles quand la barre est vide (tap = relancer) */}
+          {query.trim() === "" && recents.length > 0 && (
+            <div style={{ marginTop: "10px", display: "flex", flexWrap: "wrap", gap: "7px", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: "rgba(26,31,58,0.4)", marginRight: "1px" }}>Récentes</span>
+              {recents.map((r) => (
+                <span key={r} style={{ display: "inline-flex", alignItems: "center", gap: "5px", background: "white", border: "1px solid #e2e5f0", borderRadius: "20px", padding: "4px 6px 4px 10px", fontSize: "12px", color: "#1a1f3a", boxShadow: "0 2px 6px rgba(26,31,58,0.06)" }}>
+                  <button onClick={() => { setQuery(r); try { sessionStorage.setItem("dos-search", r); } catch {} }} style={{ border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "12px", color: "#1a1f3a", padding: 0, whiteSpace: "nowrap" }}>🕘 {r}</button>
+                  <button onClick={() => removeRecent(r)} title="Retirer" style={{ border: "none", background: "rgba(26,31,58,0.07)", borderRadius: "50%", width: "16px", height: "16px", cursor: "pointer", fontSize: "9px", color: "#8892b0", lineHeight: 1, display: "grid", placeItems: "center", flexShrink: 0 }}>✕</button>
+                </span>
+              ))}
+              <button onClick={clearRecents} style={{ border: "none", background: "none", cursor: "pointer", fontSize: "11px", color: "#8892b0", fontFamily: "inherit", textDecoration: "underline", marginLeft: "2px" }}>effacer</button>
+            </div>
+          )}
         </div>
 
         <div style={{ background: "linear-gradient(135deg, #1a1f3a 0%, #2d1b69 60%, #1e2d6b 100%)", borderRadius: "22px", padding: "18px", position: "relative", overflow: "hidden", boxShadow: "0 12px 30px rgba(26,31,58,0.3)" }}>
