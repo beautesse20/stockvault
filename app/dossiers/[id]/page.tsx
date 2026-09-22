@@ -150,6 +150,9 @@ export default function DossierPage() {
     return true;
   });
 
+  // Ouvre une fiche en mémorisant la liste ordonnée courante (pour Préc/Suiv).
+  const ouvrir = (aid: string) => { try { sessionStorage.setItem("sv_nav_list", JSON.stringify(articlesFiltres.map((x: any) => x.id))); } catch {} router.push(`/articles/${aid}`); };
+
   const gradients = [
     "linear-gradient(135deg, rgba(255,77,90,0.2), rgba(255,140,66,0.08))",
     "linear-gradient(135deg, rgba(108,99,255,0.2), rgba(16,185,129,0.08))",
@@ -217,7 +220,7 @@ export default function DossierPage() {
         {vue === "mosaique" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           {articlesFiltres.map((a, i) => (
-            <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden", cursor: "pointer" }}>
+            <div key={a.id} onClick={() => ouvrir(a.id)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden", cursor: "pointer" }}>
               <div style={{ height: "100px", background: a.images && a.images.length > 0 ? "transparent" : gradients[i % gradients.length], display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px", position: "relative" }}>
                 {a.images && a.images.length > 0 ? (
                   <>
@@ -245,7 +248,7 @@ export default function DossierPage() {
         {vue === "liste" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {articlesFiltres.map((a, i) => (
-            <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{ display: "flex", alignItems: "center", gap: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "14px", padding: "8px 12px", cursor: "pointer" }}>
+            <div key={a.id} onClick={() => ouvrir(a.id)} style={{ display: "flex", alignItems: "center", gap: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "14px", padding: "8px 12px", cursor: "pointer" }}>
               <div style={{ width: "48px", height: "48px", borderRadius: "10px", overflow: "hidden", flexShrink: 0, background: a.images && a.images.length ? "transparent" : gradients[i % gradients.length], display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
                 {a.images && a.images.length ? <img src={thumb(a.images[0].url)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "📷"}
               </div>
@@ -263,7 +266,7 @@ export default function DossierPage() {
         {vue === "compacte" && (
         <div>
           {articlesFiltres.map(a => (
-            <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "9px 6px", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer" }}>
+            <div key={a.id} onClick={() => ouvrir(a.id)} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "9px 6px", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer" }}>
               <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: "#ff4d5a", width: "76px", flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.ref}</span>
               <span style={{ flex: 1, minWidth: 0, fontSize: "13px", color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.nom}</span>
               <span style={{ fontSize: "13px", fontWeight: 800, color: "#ff8c42", flexShrink: 0 }}>{a.prix ? `${a.prix} €` : "—"}</span>

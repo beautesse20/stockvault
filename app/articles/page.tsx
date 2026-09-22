@@ -105,6 +105,9 @@ export default function ArticlesPage() {
     .filter(a => !dossierFiltre || a.dossierId === dossierFiltre)
     .filter(a => !search || a.nom.toLowerCase().includes(search.toLowerCase()) || a.ref.toLowerCase().includes(search.toLowerCase()));
 
+  // Ouvre une fiche en mémorisant la liste ordonnée courante (pour Préc/Suiv).
+  const ouvrir = (aid: string) => { try { sessionStorage.setItem("sv_nav_list", JSON.stringify(articlesFiltres.map((x: any) => x.id))); } catch {} router.push(`/articles/${aid}`); };
+
   const gradients = [
     "linear-gradient(135deg, rgba(255,77,90,0.2), rgba(255,140,66,0.08))",
     "linear-gradient(135deg, rgba(108,99,255,0.2), rgba(16,185,129,0.08))",
@@ -167,7 +170,7 @@ export default function ArticlesPage() {
         )}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           {articlesFiltres.map((a, i) => (
-            <div key={a.id} onClick={() => selectionMode ? toggleSelect(a.id) : router.push(`/articles/${a.id}`)} style={{ background: "rgba(255,255,255,0.05)", border: selected.includes(a.id) ? "2px solid #ff4d5a" : "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden", cursor: "pointer", position: "relative" }}>
+            <div key={a.id} onClick={() => selectionMode ? toggleSelect(a.id) : ouvrir(a.id)} style={{ background: "rgba(255,255,255,0.05)", border: selected.includes(a.id) ? "2px solid #ff4d5a" : "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden", cursor: "pointer", position: "relative" }}>
               <div style={{ height: "100px", background: a.images && a.images.length > 0 ? "transparent" : gradients[i % gradients.length], display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px", position: "relative" }}>
                 {a.masquerDuSite && (
                   <div style={{ position: "absolute", bottom: "6px", left: "6px", zIndex: 2, background: "rgba(26,31,58,0.85)", borderRadius: "8px", padding: "2px 7px", fontSize: "9px", fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>🚫 Masqué</div>

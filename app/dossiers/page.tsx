@@ -130,6 +130,8 @@ export default function DossiersPage() {
   // Statut "en ligne" (plateformes marketplace) — chargé en LAZY + cache, uniquement
   // quand une recherche enrichie (≤3 résultats) le nécessite. Zéro impact ailleurs.
   const enrichi = resultats.length > 0 && resultats.length <= 3;
+  // Ouvre une fiche en mémorisant l'ordre des résultats (pour Préc/Suiv dans la fiche).
+  const ouvrir = (aid: string) => { try { sessionStorage.setItem("sv_nav_list", JSON.stringify(resultats.map((x: any) => x.id))); } catch {} router.push(`/articles/${aid}`); };
   useEffect(() => {
     if (!enrichi || listingsByRef !== null) return;
     (async () => {
@@ -362,7 +364,7 @@ export default function DossiersPage() {
 
               if (!enrichi) {
                 return (
-                  <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", padding: "12px 14px", display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px", cursor: "pointer" }}>
+                  <div key={a.id} onClick={() => ouvrir(a.id)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", padding: "12px 14px", display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px", cursor: "pointer" }}>
                     {a.images && a.images[0] ? (
                       <img src={thumb(a.images[0].url)} alt="" style={{ width: "44px", height: "44px", borderRadius: "12px", objectFit: "cover", flexShrink: 0 }} />
                     ) : (
@@ -378,7 +380,7 @@ export default function DossiersPage() {
               }
 
               return (
-                <div key={a.id} onClick={() => router.push(`/articles/${a.id}`)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", padding: "14px", display: "flex", gap: "12px", marginBottom: "10px", cursor: "pointer" }}>
+                <div key={a.id} onClick={() => ouvrir(a.id)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "18px", padding: "14px", display: "flex", gap: "12px", marginBottom: "10px", cursor: "pointer" }}>
                   {a.images && a.images[0] ? (
                     <img src={thumb(a.images[0].url)} alt="" style={{ width: "64px", height: "64px", borderRadius: "14px", objectFit: "cover", flexShrink: 0 }} />
                   ) : (

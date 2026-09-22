@@ -59,6 +59,13 @@ export default function ArticlePage() {
   const router                    = useRouter();
   const params                    = useParams();
   const id                        = params.id as string;
+  // Navigation Précédent/Suivant : suit la liste d'où l'on vient (mémorisée en session).
+  const [navList, setNavList]     = useState<string[]>([]);
+  useEffect(() => { try { const l = JSON.parse(sessionStorage.getItem("sv_nav_list") || "[]"); if (Array.isArray(l)) setNavList(l); } catch {} }, []);
+  const navIdx  = navList.indexOf(id);
+  const navPrev = navIdx > 0 ? navList[navIdx - 1] : null;
+  const navNext = navIdx >= 0 && navIdx < navList.length - 1 ? navList[navIdx + 1] : null;
+  const showNav = navIdx >= 0 && navList.length > 1;
 
   useEffect(() => {
     const user = getSession();
@@ -963,6 +970,17 @@ export default function ArticlePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showNav && (
+        <>
+          <div style={{ height: "76px" }} />
+          <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 60, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 84px calc(10px + env(safe-area-inset-bottom)) 14px", background: "rgba(15,15,22,0.94)", backdropFilter: "blur(10px)", borderTop: "1px solid rgba(255,255,255,0.09)" }}>
+            <button onClick={() => navPrev && router.push(`/articles/${navPrev}`)} disabled={!navPrev} style={{ display: "flex", alignItems: "center", gap: "6px", border: "none", background: navPrev ? "rgba(255,255,255,0.08)" : "transparent", color: navPrev ? "white" : "rgba(255,255,255,0.25)", borderRadius: "12px", padding: "10px 14px", fontSize: "14px", fontWeight: 700, cursor: navPrev ? "pointer" : "default", fontFamily: "inherit" }}>‹ Précédent</button>
+            <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{navIdx + 1} / {navList.length}</span>
+            <button onClick={() => navNext && router.push(`/articles/${navNext}`)} disabled={!navNext} style={{ display: "flex", alignItems: "center", gap: "6px", border: "none", background: navNext ? "rgba(255,255,255,0.08)" : "transparent", color: navNext ? "white" : "rgba(255,255,255,0.25)", borderRadius: "12px", padding: "10px 14px", fontSize: "14px", fontWeight: 700, cursor: navNext ? "pointer" : "default", fontFamily: "inherit" }}>Suivant ›</button>
+          </div>
+        </>
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
