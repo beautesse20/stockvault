@@ -777,7 +777,7 @@ export default function ArticlePage() {
 
       {/* Modal déplacer */}
       {showMove && (
-        <div onClick={() => setShowMove(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 50, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div onClick={() => setShowMove(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 70, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f3a", borderRadius: "28px 28px 0 0", width: "100%", maxWidth: "480px", padding: "24px 20px 48px" }}>
             <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto 20px" }} />
             <h2 style={{ fontSize: "20px", fontWeight: 900, color: "white", marginBottom: "16px", textAlign: "center" }}>Déplacer vers…</h2>
@@ -797,7 +797,7 @@ export default function ArticlePage() {
 
       {/* Panneau Rédiger une annonce */}
       {showAnnonce && (
-        <div onClick={() => { if (!annLoading) setShowAnnonce(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 60, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div onClick={() => { if (!annLoading) setShowAnnonce(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", zIndex: 80, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#1a1f3a", borderRadius: "28px 28px 0 0", width: "100%", maxWidth: "480px", padding: "24px 20px 48px", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ width: "40px", height: "4px", background: "rgba(255,255,255,0.2)", borderRadius: "2px", margin: "0 auto 20px" }} />
             <h2 style={{ fontSize: "20px", fontWeight: 900, color: "white", marginBottom: "4px", textAlign: "center" }}>✍️ Rédiger une annonce</h2>
