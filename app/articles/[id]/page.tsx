@@ -759,19 +759,26 @@ export default function ArticlePage() {
         {isAdmin && annSaved.length > 0 && (
           <div style={{ marginTop: "22px" }}>
             <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: "10px" }}>📢 Annonces générées ({annSaved.length})</p>
-            {annSaved.map((a, i) => (
-              <div key={i} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "14px", marginBottom: "10px" }}>
+            {annSaved.map((a, i) => {
+              const estCarte = /^Carte à lire/i.test(a.plateforme || "");
+              return (
+              <div key={i} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${estCarte ? "rgba(245,158,11,0.55)" : "rgba(255,255,255,0.08)"}`, borderRadius: "16px", padding: "14px", marginBottom: "10px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{a.plateforme}</span>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{estCarte ? "🃏 " : ""}{a.plateforme}{estCarte && <span style={{ marginLeft: "8px", fontSize: "10px", background: "rgba(245,158,11,0.18)", color: "#f59e0b", padding: "2px 7px", borderRadius: "20px" }}>PRÊTE À COLLER</span>}</span>
                   <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}>{a.date} {a.heure}</span>
                 </div>
-                <p style={{ fontSize: "14px", fontWeight: 700, color: "white", lineHeight: 1.35 }}>{a.titre}</p>
-                {a.prix && <p style={{ fontSize: "13px", fontWeight: 700, color: "#f59e0b", marginTop: "6px" }}>💰 {a.prix}</p>}
-                <button onClick={() => copierAnn(a.titre, `st${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `st${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `st${i}` ? "✓ Titre copié" : "Copier le titre"}</button>
-                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 1.55, whiteSpace: "pre-line", marginTop: "10px", paddingTop: "10px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{a.description}</p>
-                <button onClick={() => copierAnn(a.description, `sd${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `sd${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `sd${i}` ? "✓ Description copiée" : "Copier la description"}</button>
+                {!estCarte && (
+                  <>
+                    <p style={{ fontSize: "14px", fontWeight: 700, color: "white", lineHeight: 1.35 }}>{a.titre}</p>
+                    {a.prix && <p style={{ fontSize: "13px", fontWeight: 700, color: "#f59e0b", marginTop: "6px" }}>💰 {a.prix}</p>}
+                    <button onClick={() => copierAnn(a.titre, `st${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `st${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `st${i}` ? "✓ Titre copié" : "Copier le titre"}</button>
+                  </>
+                )}
+                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 1.55, whiteSpace: "pre-line", marginTop: estCarte ? "4px" : "10px", paddingTop: estCarte ? "0" : "10px", borderTop: estCarte ? "none" : "1px solid rgba(255,255,255,0.08)" }}>{a.description}</p>
+                <button onClick={() => copierAnn(a.description, `sd${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `sd${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `sd${i}` ? (estCarte ? "✓ Carte copiée" : "✓ Description copiée") : (estCarte ? "Copier la carte" : "Copier la description")}</button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

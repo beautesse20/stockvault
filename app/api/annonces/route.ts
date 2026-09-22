@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
     if (article.ref) {
       await fetch(`${VENTES}/api/historique`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categorie: type, ref: article.ref, annonces: pleines.filter(a => !a.isCard) }),
+        body: JSON.stringify({ categorie: type, ref: article.ref, annonces: pleines }),
       }).catch(() => {});
     }
 
