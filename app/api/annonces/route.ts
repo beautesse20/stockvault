@@ -18,6 +18,34 @@ function extraire(txt: string, cle: string): string {
   return m?.[0] ? m[0].replace(`${cle}:`, "").trim() : "";
 }
 
+// ── Bandeau « bien lire l'annonce » (fond identique, forme variée) ──
+const WARN_TXT: Record<string, string[]> = {
+  fr: [
+    "Merci de bien lire toute l'annonce avant de poser vos questions !",
+    "Pensez à lire l'annonce en entier avant de poser des questions !",
+    "Lisez bien tous les détails ci-dessous avant de me contacter !",
+    "Merci de lire attentivement l'annonce avant toute question !",
+  ],
+  en: [
+    "Please read the whole card carefully before asking any questions!",
+    "Kindly read this listing fully before messaging me your questions!",
+    "Take a moment to read everything below before asking questions!",
+    "Please read all the details carefully before reaching out!",
+  ],
+};
+const WARN_ICONS = ["⚠", "📢", "❗", "🔎", "🙏", "📝", "👀"];
+function warnLine(lang: string): string {
+  const arr = WARN_TXT[lang] || WARN_TXT.fr;
+  const t = arr[Math.floor(Math.random() * arr.length)];
+  const ic = WARN_ICONS[Math.floor(Math.random() * WARN_ICONS.length)];
+  return `${ic} ${t} ${ic}`;
+}
+const slug = (s: string, lower = true): string => {
+  const out = String(s || "").replace(/[^A-Za-z0-9]/g, "");
+  return lower ? out.toLowerCase() : out;
+};
+const firstTok = (s: string): string => String(s || "").trim().split(/\s+/)[0] || "";
+
 function buildProduit(article: any, type: "tels" | "divers") {
   if (type === "tels") {
     return {
@@ -54,7 +82,7 @@ export async function GET(req: NextRequest) {
 //          (sinon Vercel gèle la fonction et la sauvegarde est tuée à mi-chemin).
 export async function POST(req: NextRequest) {
   try {
-    const { article, plateformes, precision } = await req.json();
+    const { article, plateformes, precision, preavis } = await req.json();
     if (!article || !Array.isArray(plateformes) || plateformes.length === 0) {
       return NextResponse.json({ success: false, error: "article et plateformes requis" }, { status: 400 });
     }
@@ -77,16 +105,45 @@ export async function POST(req: NextRequest) {
 
     // Marqueur discret : la réf encodée en mot prononçable (#voquvub), glissée en
     // fin de description sur TOUTES les plateformes (identique à l'app de ventes).
-    const marqueur = refReelle(article.ref) ? `\n\n#${refToCode(article.ref)}` : "";
-    const annonces = plateformes.map((p: string) => {
+    const code = refReelle(article.ref) ? refToCode(article.ref) : "";
+    const marqueur = code ? `\n\n#${code}` : "";
+    const annonces: any[] = plateformes.map((p: string) => {
+      const lang = p === "facebook" ? "en" : "fr";
+      const w = preavis ? warnLine(lang) + "\n\n" : "";
       const desc = extraire(genData.annonce, `${p.toUpperCase()}_DESCRIPTION`);
+      const body = desc.trim() ? desc + marqueur : desc; // marqueur seulement si desc pleine
       return {
         plat: p,
         nom: NOM_PLATS[p] || p,
         titre: extraire(genData.annonce, `${p.toUpperCase()}_TITRE`),
-        desc: desc.trim() ? desc + marqueur : desc, // marqueur seulement si desc pleine
+        desc: (w + body).trim(),
       };
     });
+
+    // ── Carte structurée Facebook (bloc séparé, tels + divers) ──
+    if (plateformes.includes("facebook")) {
+      const trending = slug(genData.trending, false) || "Vancouver";
+      const title = extraire(genData.annonce, "FACEBOOK_CARD_TITLE");
+      const lines = extraire(genData.annonce, "FACEBOOK_CARD_LINES");
+      const closing = extraire(genData.annonce, "FACEBOOK_CARD_CLOSING");
+      let hook = extraire(genData.annonce, "FACEBOOK_CARD_HOOK").replace(/^\[|\]$/g, "").trim();
+      if (/FACEBOOK_CARD|^[A-Z_]{3,}:/.test(hook) || /^(vide|laisse vide|none|n\/?a|—|-)$/i.test(hook)) hook = "";
+      const modeltag = slug(firstTok(extraire(genData.annonce, "FACEBOOK_CARD_MODELTAG"))) || (type === "tels" ? "phone" : "item");
+      let tag2 = slug(firstTok(extraire(genData.annonce, "FACEBOOK_CARD_TAG2")), false);
+      if (!tag2) tag2 = type === "tels" ? "UNLOCKED" : "";
+      if (title || lines) {
+        const hashtags = ["#" + modeltag, tag2 ? "#" + tag2 : "", "#" + trending, code ? "#" + code : ""].filter(Boolean).join(" ");
+        const parts: string[] = [];
+        if (preavis) parts.push(warnLine("en"), "");
+        parts.push(title);
+        if (hook) parts.push(hook);
+        parts.push("", "💵 Price: $______", "", lines, "", closing, "", hashtags);
+        const cardText = parts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+        const cardEntry = { plat: "facebook_card", nom: "Carte à lire · Facebook", titre: "", desc: cardText, isCard: true };
+        const fbIdx = annonces.findIndex(a => a.plat === "facebook");
+        if (fbIdx >= 0) annonces.splice(fbIdx + 1, 0, cardEntry); else annonces.push(cardEntry);
+      }
+    }
 
     // Garde-fou : si le parsing n'a rien donné (annonces vides), on ne sauvegarde
     // RIEN et on renvoie une erreur claire pour que l'UI propose de réessayer.
@@ -102,7 +159,7 @@ export async function POST(req: NextRequest) {
     if (article.ref) {
       await fetch(`${VENTES}/api/historique`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categorie: type, ref: article.ref, annonces: pleines }),
+        body: JSON.stringify({ categorie: type, ref: article.ref, annonces: pleines.filter(a => !a.isCard) }),
       }).catch(() => {});
     }
 

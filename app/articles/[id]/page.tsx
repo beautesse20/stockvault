@@ -33,6 +33,7 @@ export default function ArticlePage() {
   const [showAnnonce, setShowAnnonce]   = useState(false);
   const [annPlats, setAnnPlats]         = useState<string[]>([]);
   const [annPrecision, setAnnPrecision] = useState("");
+  const [annPreavis, setAnnPreavis]     = useState(false); // bandeau « bien lire l'annonce »
   const [annLoading, setAnnLoading]     = useState(false);
   const [annResults, setAnnResults]     = useState<any[] | null>(null);
   const [annErr, setAnnErr]             = useState("");
@@ -186,7 +187,7 @@ export default function ArticlePage() {
     try {
       const res = await fetch("/api/annonces", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ article, plateformes: annPlats, precision: annPrecision }),
+        body: JSON.stringify({ article, plateformes: annPlats, precision: annPrecision, preavis: annPreavis }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error || "Génération échouée");
@@ -710,7 +711,7 @@ export default function ArticlePage() {
               )}
               {/* Rédiger annonce — Admin seulement (panneau inline, plus de détour launcher) */}
               {isAdmin && (
-                <button onClick={() => { setAnnPlats([]); setAnnPrecision(""); setAnnResults(null); setAnnErr(""); setPrixReel(null); setPrixErr(false); setPrixLoading(false); setPrixLbc(null); setPrixLbcErr(false); setPrixLbcLoading(false); setPrixCanada(null); setPrixCanadaErr(false); setPrixCanadaLoading(false); setShowAnnonce(true); }} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(245,158,11,0.35)" }}>✍️ Rédiger une annonce</button>
+                <button onClick={() => { setAnnPlats([]); setAnnPrecision(""); setAnnPreavis(false); setAnnResults(null); setAnnErr(""); setPrixReel(null); setPrixErr(false); setPrixLoading(false); setPrixLbc(null); setPrixLbcErr(false); setPrixLbcLoading(false); setPrixCanada(null); setPrixCanadaErr(false); setPrixCanadaLoading(false); setShowAnnonce(true); }} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(245,158,11,0.35)" }}>✍️ Rédiger une annonce</button>
               )}
               {/* Enregistrer la vente — Admin : ouvre Suivi des ventes avec l'article pré-sélectionné */}
               {isAdmin && article && (
@@ -814,7 +815,14 @@ export default function ArticlePage() {
                   ))}
                 </div>
                 <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>Précision (optionnel)</p>
-                <input type="text" value={annPrecision} onChange={e => setAnnPrecision(e.target.value)} placeholder="ex: insiste sur la batterie neuve" style={{ width: "100%", padding: "13px 14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "white", fontSize: "14px", fontFamily: "inherit", marginBottom: "18px", boxSizing: "border-box" }} />
+                <input type="text" value={annPrecision} onChange={e => setAnnPrecision(e.target.value)} placeholder="ex: insiste sur la batterie neuve" style={{ width: "100%", padding: "13px 14px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "white", fontSize: "14px", fontFamily: "inherit", marginBottom: "14px", boxSizing: "border-box" }} />
+                <button onClick={() => setAnnPreavis(v => !v)} style={{ width: "100%", display: "flex", alignItems: "flex-start", gap: "10px", textAlign: "left", padding: "13px 14px", borderRadius: "12px", border: `1px solid ${annPreavis ? "#f59e0b" : "rgba(255,255,255,0.1)"}`, background: annPreavis ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)", cursor: "pointer", fontFamily: "inherit", marginBottom: "18px" }}>
+                  <span style={{ width: "20px", height: "20px", flexShrink: 0, borderRadius: "6px", border: `2px solid ${annPreavis ? "#f59e0b" : "rgba(255,255,255,0.25)"}`, background: annPreavis ? "#f59e0b" : "transparent", color: "#1a1f3a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 900 }}>{annPreavis ? "✓" : ""}</span>
+                  <span>
+                    <span style={{ display: "block", fontSize: "14px", fontWeight: 700, color: "white" }}>⚠ Ajouter « Bien lire l&apos;annonce »</span>
+                    <span style={{ display: "block", fontSize: "12px", color: "rgba(255,255,255,0.5)", marginTop: "2px" }}>Bandeau « lire avant de poser des questions » en tête de chaque annonce (formulation variée)</span>
+                  </span>
+                </button>
                 {annErr && <p style={{ color: "#ff4d5a", fontSize: "13px", marginBottom: "12px" }}>{annErr}</p>}
                 <button onClick={genererAnnonces} disabled={annPlats.length === 0 || annLoading} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: annPlats.length === 0 ? "default" : "pointer", fontFamily: "inherit", opacity: (annPlats.length === 0 || annLoading) ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
                   {annLoading ? <><span style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Génération...</> : "Générer les annonces"}
@@ -894,12 +902,16 @@ export default function ArticlePage() {
                   </div>
                 )}
                 {annResults.map((a, i) => (
-                  <div key={i} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "14px", marginBottom: "10px" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{a.nom}</span>
-                    <p style={{ fontSize: "14px", fontWeight: 700, color: "white", lineHeight: 1.35, marginTop: "8px" }}>{a.titre}</p>
-                    <button onClick={() => copierAnn(a.titre, `rt${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `rt${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `rt${i}` ? "✓ Titre copié" : "Copier le titre"}</button>
-                    <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 1.55, whiteSpace: "pre-line", marginTop: "10px", paddingTop: "10px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>{a.desc}</p>
-                    <button onClick={() => copierAnn(a.desc, `rd${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `rd${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `rd${i}` ? "✓ Description copiée" : "Copier la description"}</button>
+                  <div key={i} style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${a.isCard ? "rgba(245,158,11,0.55)" : "rgba(255,255,255,0.08)"}`, borderRadius: "16px", padding: "14px", marginBottom: "10px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.06em" }}>{a.isCard ? "🃏 " : ""}{a.nom}{a.isCard && <span style={{ marginLeft: "8px", fontSize: "10px", background: "rgba(245,158,11,0.18)", color: "#f59e0b", padding: "2px 7px", borderRadius: "20px" }}>PRÊTE À COLLER</span>}</span>
+                    {!a.isCard && (
+                      <>
+                        <p style={{ fontSize: "14px", fontWeight: 700, color: "white", lineHeight: 1.35, marginTop: "8px" }}>{a.titre}</p>
+                        <button onClick={() => copierAnn(a.titre, `rt${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `rt${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `rt${i}` ? "✓ Titre copié" : "Copier le titre"}</button>
+                      </>
+                    )}
+                    <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 1.55, whiteSpace: "pre-line", marginTop: a.isCard ? "8px" : "10px", paddingTop: a.isCard ? "0" : "10px", borderTop: a.isCard ? "none" : "1px solid rgba(255,255,255,0.08)" }}>{a.desc}</p>
+                    <button onClick={() => copierAnn(a.desc, `rd${i}`)} style={{ width: "100%", padding: "8px", marginTop: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", fontSize: "12px", fontWeight: 600, color: copiedKey === `rd${i}` ? "#f59e0b" : "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "inherit" }}>{copiedKey === `rd${i}` ? (a.isCard ? "✓ Carte copiée" : "✓ Description copiée") : (a.isCard ? "Copier la carte" : "Copier la description")}</button>
                   </div>
                 ))}
                 {!posteSaved ? (
@@ -907,7 +919,7 @@ export default function ArticlePage() {
                     <p style={{ fontSize: "14px", fontWeight: 800, color: "white", margin: "0 0 4px" }}>📤 Tu l&apos;as mis en ligne ?</p>
                     <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", margin: "0 0 10px" }}>Coche là où tu l&apos;as posté (suivi de rotation). Sinon « juste le prix ».</p>
                     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
-                      {annResults.map((a: any) => { const on = postePlats.includes(a.plat); const nom: any = { lbc: "LeBonCoin", vinted: "Vinted", rakuten: "Rakuten", facebook: "Facebook" }; return (
+                      {annResults.filter((a: any) => !a.isCard).map((a: any) => { const on = postePlats.includes(a.plat); const nom: any = { lbc: "LeBonCoin", vinted: "Vinted", rakuten: "Rakuten", facebook: "Facebook" }; return (
                         <button key={a.plat} onClick={() => setPostePlats(prev => prev.includes(a.plat) ? prev.filter(x => x !== a.plat) : [...prev, a.plat])} style={{ padding: "8px 14px", borderRadius: "99px", border: `1.5px solid ${on ? "#6366f1" : "rgba(255,255,255,0.15)"}`, background: on ? "rgba(99,102,241,0.2)" : "transparent", color: on ? "#c7d2fe" : "rgba(255,255,255,0.6)", fontSize: "13px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{on ? "✓ " : ""}{nom[a.plat] || a.plat}</button>
                       ); })}
                     </div>
@@ -920,7 +932,7 @@ export default function ArticlePage() {
                   <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid #6366f1", borderRadius: "12px", padding: "10px 14px", marginBottom: "10px", fontSize: "12px", color: "#c7d2fe" }}>{postePlats.length ? "✓ Mise en ligne enregistrée (suivi rotation)." : "Ok, noté — pas mis en ligne."}</div>
                 )}
                 <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", textAlign: "center", margin: "12px 0" }}>Enregistré sur la fiche ✓</p>
-                <button onClick={() => { setAnnResults(null); setAnnPlats([]); setAnnPrecision(""); setPrixReel(null); setPrixErr(false); setPrixLoading(false); setPrixLbc(null); setPrixLbcErr(false); setPrixLbcLoading(false); setPrixCanada(null); setPrixCanadaErr(false); setPrixCanadaLoading(false); }} style={{ width: "100%", padding: "14px", borderRadius: "14px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: "8px" }}>← Générer d'autres</button>
+                <button onClick={() => { setAnnResults(null); setAnnPlats([]); setAnnPrecision(""); setAnnPreavis(false); setPrixReel(null); setPrixErr(false); setPrixLoading(false); setPrixLbc(null); setPrixLbcErr(false); setPrixLbcLoading(false); setPrixCanada(null); setPrixCanadaErr(false); setPrixCanadaLoading(false); }} style={{ width: "100%", padding: "14px", borderRadius: "14px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: "8px" }}>← Générer d'autres</button>
                 <button onClick={() => setShowAnnonce(false)} style={{ width: "100%", padding: "14px", borderRadius: "14px", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Fermer</button>
               </>
             )}
