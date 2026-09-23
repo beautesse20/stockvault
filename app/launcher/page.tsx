@@ -95,6 +95,11 @@ export default function LauncherPage() {
   const [loading, setLoading] = useState(false);
   const [user, setUser]       = useState<any>(null);
   const [showApp, setShowApp] = useState<{ url: string; nom: string } | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list"); // disposition des apps
+  const changeView = (m: "list" | "grid") => {
+    setViewMode(m);
+    try { localStorage.setItem("sv_launcher_view", m); } catch {}
+  };
   const iframeRef   = useRef<HTMLIFrameElement>(null);
   const pendingPrefill = useRef<any>(null);
   const router = useRouter();
@@ -120,6 +125,7 @@ export default function LauncherPage() {
   };
 
   useEffect(() => {
+    try { const v = localStorage.getItem("sv_launcher_view"); if (v === "grid" || v === "list") setViewMode(v); } catch {}
     const session = getSession();
     if (session) {
       setUser(session);
@@ -266,46 +272,87 @@ export default function LauncherPage() {
           flex: 1,
           background: "#1a1f3a",
           borderRadius: "0 60px 0 0",
-          padding: "30px 20px",
+          padding: "26px 20px 30px",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
+          justifyContent: viewMode === "grid" ? "flex-start" : "center",
           gap: "16px",
           zIndex: 1,
         }}>
-          {APPS.filter(app => !app.adminOnly || user.role === "Admin").map((app, i) => (
-            <button key={i} onClick={() => handleApp(app)} style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "28px",
-              padding: "20px",
-              display: "flex",
-              alignItems: "center",
-              gap: "20px",
-              cursor: "pointer",
-              fontFamily: "inherit",
+          {/* Toggle disposition : Liste / Icônes */}
+          <div style={{ display: "inline-flex", alignSelf: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "999px", padding: "4px", gap: "4px", marginBottom: "6px" }}>
+            {([["list", "☰", "Liste"], ["grid", "▦", "Icônes"]] as const).map(([m, ic, lbl]) => (
+              <button key={m} onClick={() => changeView(m)} style={{
+                padding: "8px 16px", borderRadius: "999px", border: "none", cursor: "pointer",
+                fontFamily: "inherit", fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px",
+                background: viewMode === m ? "rgba(255,255,255,0.16)" : "transparent",
+                color: viewMode === m ? "white" : "rgba(255,255,255,0.5)",
+                transition: "background 0.15s, color 0.15s",
+              }}>{ic} {lbl}</button>
+            ))}
+          </div>
+
+          {viewMode === "list" ? (
+            APPS.filter(app => !app.adminOnly || user.role === "Admin").map((app, i) => (
+              <button key={i} onClick={() => handleApp(app)} style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "28px",
+                padding: "20px",
+                display: "flex",
+                alignItems: "center",
+                gap: "20px",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                width: "100%",
+              }}>
+                <div style={{
+                  width: "90px", height: "90px", borderRadius: "22px",
+                  background: app.color, display: "flex", alignItems: "center",
+                  justifyContent: "center", fontSize: "44px", flexShrink: 0,
+                  boxShadow: `0 8px 22px ${app.shadow}`,
+                }}>{app.emoji}</div>
+
+                <div style={{ flex: 1, textAlign: "left" }}>
+                  <p style={{ fontSize: "20px", fontWeight: 800, color: "white", marginBottom: "4px" }}>{app.nom}</p>
+                  <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>{app.description}</p>
+                </div>
+
+                <div style={{
+                  width: "40px", height: "40px", borderRadius: "12px",
+                  background: "rgba(255,255,255,0.08)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "rgba(255,255,255,0.4)", fontSize: "22px", flexShrink: 0,
+                }}>›</div>
+              </button>
+            ))
+          ) : (
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+              gap: "20px 12px",
               width: "100%",
+              maxWidth: "540px",
+              margin: "6px auto 0",
             }}>
-              <div style={{
-                width: "90px", height: "90px", borderRadius: "22px",
-                background: app.color, display: "flex", alignItems: "center",
-                justifyContent: "center", fontSize: "44px", flexShrink: 0,
-                boxShadow: `0 8px 22px ${app.shadow}`,
-              }}>{app.emoji}</div>
-
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <p style={{ fontSize: "20px", fontWeight: 800, color: "white", marginBottom: "4px" }}>{app.nom}</p>
-                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>{app.description}</p>
-              </div>
-
-              <div style={{
-                width: "40px", height: "40px", borderRadius: "12px",
-                background: "rgba(255,255,255,0.08)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "rgba(255,255,255,0.4)", fontSize: "22px", flexShrink: 0,
-              }}>›</div>
-            </button>
-          ))}
+              {APPS.filter(app => !app.adminOnly || user.role === "Admin").map((app, i) => (
+                <button key={i} onClick={() => handleApp(app)} title={app.description} style={{
+                  background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: "9px", padding: "4px 2px",
+                }}>
+                  <div style={{
+                    width: "clamp(64px, 20vw, 82px)", aspectRatio: "1", borderRadius: "22px",
+                    background: app.color, display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "clamp(30px, 9vw, 40px)", boxShadow: `0 8px 22px ${app.shadow}`,
+                  }}>{app.emoji}</div>
+                  <span style={{
+                    fontSize: "12.5px", fontWeight: 700, color: "white", textAlign: "center",
+                    lineHeight: 1.2, width: "100%", wordBreak: "break-word",
+                  }}>{app.nom}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
