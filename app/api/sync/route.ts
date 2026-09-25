@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireCap } from "@/lib/token";
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgkyOzAa3Xv3oyndWjwydkssGCW_KgXuwjdo9N-b02YnkksA2pmlk5iA5zzTlLqyjK/exec";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
+    if (!requireCap(req, "admin.settings")) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     const res = await fetch(`${APPS_SCRIPT_URL}?action=sync`, {
       method:  "GET",
       headers: { "Content-Type": "application/json" },
