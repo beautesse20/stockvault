@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { loginByPin } from "@/lib/firebase";
-import { saveSession, getSession } from "@/lib/auth";
+import { saveSession, getSession, getToken } from "@/lib/auth";
 import { logEvent } from "@/lib/audit";
 
 const APPS = [
@@ -210,8 +210,13 @@ export default function LauncherPage() {
   // PartStack…) attribuent leurs événements au bon utilisateur dans le journal.
   const withUser = (url: string) => {
     const nom = getSession()?.nom;
-    if (!nom) return url;
-    return url + (url.includes("?") ? "&" : "?") + "u=" + encodeURIComponent(nom);
+    let u = url;
+    if (nom) u += (u.includes("?") ? "&" : "?") + "u=" + encodeURIComponent(nom);
+    // Jeton signé transmis dans le hash (hors logs serveur) → l'app cible l'utilise
+    // pour prouver l'identité + les permissions côté serveur.
+    const tk = getToken();
+    if (tk) u += (u.includes("#") ? "&" : "#") + "tk=" + encodeURIComponent(tk);
+    return u;
   };
 
   const handleApp = (app: typeof APPS[0]) => {
