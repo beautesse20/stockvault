@@ -65,7 +65,7 @@ export const ALL_PERMS: string[] = PERMISSIONS.flatMap((g) => g.items.map((i) =>
 
 // Défaut rétro-compatible pour les anciens comptes "Standard" (aucune permission
 // enregistrée) : ce qu'ils pouvaient déjà faire avant, ni plus ni moins.
-export const LEGACY_STANDARD_PERMS = ["stock.view", "stock.edit", "partstack.view", "partstack.edit"];
+export const LEGACY_STANDARD_PERMS = ["stock.view", "stock.edit"];
 
 // Permissions EFFECTIVES d'un utilisateur (Admin = tout ; sinon ses permissions,
 // avec repli legacy pour les comptes non encore migrés).

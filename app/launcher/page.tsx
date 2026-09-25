@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { loginByPin } from "@/lib/firebase";
 import { saveSession, getSession, getToken } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { logEvent } from "@/lib/audit";
 
 const APPS = [
@@ -89,6 +90,24 @@ const APPS = [
   },
 ];
 
+// Permissions qui rendent chaque app visible dans le launcher (au moins une suffit).
+// Admin voit tout. Comptes Standard : uniquement les apps correspondant à leurs droits.
+const APP_PERMS: Record<string, string[]> = {
+  "StockVault":            ["stock.view"],
+  "Recherche":             ["recherche.use"],
+  "PartStack":             ["partstack.view"],
+  "Suivi des ventes":      ["ventes.record", "ventes.dashboard"],
+  "Générateur d'annonces": ["annonces.generate"],
+  "Analyse de lot":        ["analyse.lot"],
+  "Rentabilité par lot":   ["rentabilite.view"],
+  "Mon Conseiller":        ["conseiller.use"],
+};
+function appsVisibles(user: any) {
+  if (!user) return [];
+  if (user.role === "Admin") return APPS;
+  return APPS.filter(a => (APP_PERMS[a.nom] || []).some(p => can(user, p)));
+}
+
 export default function LauncherPage() {
   const [pin, setPin]         = useState("");
   const [error, setError]     = useState("");
@@ -107,13 +126,13 @@ export default function LauncherPage() {
   // Ouvre l'annonces app dès que user et params URL sont disponibles
   const checkAndOpenAnnonces = (session: any) => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get("app") === "annonces" && session?.role === "Admin") {
+    if (p.get("app") === "annonces" && can(session, "annonces.generate")) {
       const annApp = APPS.find(a => a.nom === "Générateur d'annonces");
       if (annApp) setShowApp({ url: withUser(annApp.url), nom: annApp.nom });
     }
     // Depuis une fiche produit : "Enregistrer la vente" → ouvre Suivi des ventes
     // avec l'article pré-sélectionné (préremplissage par URL, pas de handshake).
-    if (p.get("app") === "ventes" && session?.role === "Admin") {
+    if (p.get("app") === "ventes" && can(session, "ventes.record")) {
       const v = APPS.find(a => a.nom === "Suivi des ventes");
       if (v) {
         const ref = p.get("ref") || "", nom = p.get("nom") || "", type = p.get("type") || "";
@@ -191,7 +210,12 @@ export default function LauncherPage() {
           logEvent("connexion", { cible: found.nom, details: `Rôle ${found.role}` });
           setUser(found);
           setPin("");
-          if (found.role === "Standard") router.push("/dossiers");
+          // Standard : s'il n'a QUE StockVault, on l'y emmène directement (UX
+          // inchangée pour les magasiniers). Sinon on affiche le launcher filtré.
+          if (found.role === "Standard") {
+            const av = appsVisibles(found);
+            if (av.length <= 1 && (av.length === 0 || av[0].internal)) router.push("/dossiers");
+          }
         } else {
           setTimeout(() => { setPin(""); setError("Code incorrect, réessaie"); setLoading(false); }, 400);
         }
@@ -252,8 +276,8 @@ export default function LauncherPage() {
     );
   }
 
-  // ── VUE APPS ADMIN ──
-  if (user && user.role === "Admin") {
+  // ── VUE APPS (Admin = tout ; Standard = apps autorisées) ──
+  if (user) {
     return (
       <div style={{ minHeight: "100vh", background: "#1a1f3a", display: "flex", flexDirection: "column" }}>
 
@@ -311,7 +335,7 @@ export default function LauncherPage() {
           </div>
 
           {viewMode === "list" ? (
-            APPS.filter(app => !app.adminOnly || user.role === "Admin").map((app, i) => (
+            appsVisibles(user).map((app, i) => (
               <button key={i} onClick={() => handleApp(app)} style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.08)",
@@ -353,7 +377,7 @@ export default function LauncherPage() {
               maxWidth: "540px",
               margin: "6px auto 0",
             }}>
-              {APPS.filter(app => !app.adminOnly || user.role === "Admin").map((app, i) => (
+              {appsVisibles(user).map((app, i) => (
                 <button key={i} onClick={() => handleApp(app)} title={app.description} style={{
                   background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit",
                   display: "flex", flexDirection: "column", alignItems: "center", gap: "9px", padding: "4px 2px",
