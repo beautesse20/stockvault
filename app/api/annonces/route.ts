@@ -94,8 +94,10 @@ export async function POST(req: NextRequest) {
     const type: "tels" | "divers" = estTel ? "tels" : "divers";
     const produit = buildProduit(article, type);
 
+    // On fait suivre le jeton de l'appelant → l'app Ventes vérifie la permission.
+    const auth = req.headers.get("authorization") || "";
     const genRes = await fetch(`${VENTES}/api/generer`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json", ...(auth ? { Authorization: auth } : {}) },
       body: JSON.stringify({ produit, type, plateformes, precision: precision || "" }),
     });
     const genData = await genRes.json();
@@ -158,7 +160,7 @@ export async function POST(req: NextRequest) {
     // Enregistre dans l'onglet "Annonces IA" (par référence) — seulement les pleines.
     if (article.ref) {
       await fetch(`${VENTES}/api/historique`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...(auth ? { Authorization: auth } : {}) },
         body: JSON.stringify({ categorie: type, ref: article.ref, annonces: pleines }),
       }).catch(() => {});
     }

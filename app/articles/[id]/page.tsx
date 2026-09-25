@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getSession, authHeaders } from "@/lib/auth";
 import { logEvent } from "@/lib/audit";
 import { Article, Dossier } from "@/lib/airtable";
 import { thumb, medium } from "@/lib/img";
@@ -186,7 +186,7 @@ export default function ArticlePage() {
     if (fbSel) { lancerPrixCanada(); }                 // Marché canadien Vancouver (CAD)
     try {
       const res = await fetch("/api/annonces", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ article, plateformes: annPlats, precision: annPrecision, preavis: annPreavis }),
       });
       const data = await res.json();
