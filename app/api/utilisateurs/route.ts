@@ -15,11 +15,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { nom, pin, role, dossierIds } = await req.json();
+    const { nom, pin, role, dossierIds, permissions } = await req.json();
     if (!nom || !pin || !role) {
       return NextResponse.json({ error: "Champs manquants" }, { status: 400 });
     }
-    await createUtilisateur(nom, pin, role, dossierIds || []);
+    await createUtilisateur(nom, pin, role, dossierIds || [], permissions || []);
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

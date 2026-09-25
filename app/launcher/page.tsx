@@ -172,9 +172,22 @@ export default function LauncherPage() {
     if (newPin.length === 4) {
       setLoading(true);
       try {
-        const found = await loginByPin(newPin);
+        // Connexion côté serveur : renvoie l'utilisateur (sans PIN) + un jeton signé.
+        let found: any = null, token: string | undefined;
+        let serverErr = false;
+        try {
+          const res = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin: newPin }) });
+          const d = await res.json();
+          if (d.success) { found = d.user; token = d.token; }
+          else if (res.status !== 401) serverErr = true; // 401 = vrai mauvais code ; autre = souci serveur
+        } catch { serverErr = true; }
+        // Filet de sécurité : si l'API a un souci (pas un mauvais code), on retombe
+        // sur l'ancienne connexion pour ne jamais bloquer l'accès.
+        if (!found && serverErr) {
+          try { const u = await loginByPin(newPin); if (u) found = { id: u.id, nom: u.nom, role: u.role, dossierIds: u.dossierIds || [], permissions: u.permissions }; } catch {}
+        }
         if (found) {
-          saveSession(found);
+          saveSession(found, token);
           logEvent("connexion", { cible: found.nom, details: `Rôle ${found.role}` });
           setUser(found);
           setPin("");

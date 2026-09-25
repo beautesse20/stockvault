@@ -61,6 +61,7 @@ export type Utilisateur = {
   pin:         string;
   role:        "Admin" | "Standard";
   dossierIds?: string[];
+  permissions?: string[];   // permissions à la carte (voir lib/permissions.ts)
 };
 
 // ── DOSSIERS ──
@@ -209,9 +210,9 @@ export async function loginByPin(pin: string): Promise<Utilisateur | null> {
 }
 
 export async function createUtilisateur(
-  nom: string, pin: string, role: "Admin" | "Standard", dossierIds: string[]
+  nom: string, pin: string, role: "Admin" | "Standard", dossierIds: string[], permissions: string[] = []
 ): Promise<void> {
-  await addDoc(collection(db, "utilisateurs"), { nom, pin, role, dossierIds });
+  await addDoc(collection(db, "utilisateurs"), { nom, pin, role, dossierIds, permissions });
 }
 
 export async function updateUtilisateur(id: string, fields: Partial<Utilisateur>): Promise<void> {

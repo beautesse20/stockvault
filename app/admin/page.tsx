@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Utilisateur, Dossier } from "@/lib/airtable";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export default function AdminPage() {
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
@@ -16,6 +17,7 @@ export default function AdminPage() {
   const [formPin, setFormPin]           = useState("");
   const [formRole, setFormRole]         = useState<"Admin" | "Standard">("Standard");
   const [formDossiers, setFormDossiers] = useState<string[]>([]);
+  const [formPerms, setFormPerms]       = useState<string[]>([]);
   const [savingUser, setSavingUser]     = useState(false);
   const [newDossierNom, setNewDossierNom] = useState("");
   const [savingDossier, setSavingDossier] = useState(false);
@@ -41,20 +43,21 @@ export default function AdminPage() {
     }
   };
 
-  const openCreateForm = () => { setEditingUser(null); setFormNom(""); setFormPin(""); setFormRole("Standard"); setFormDossiers([]); setShowForm(true); };
-  const openEditForm = (u: Utilisateur) => { setEditingUser(u); setFormNom(u.nom); setFormPin(u.pin); setFormRole(u.role); setFormDossiers(u.dossierIds || []); setShowForm(true); };
+  const openCreateForm = () => { setEditingUser(null); setFormNom(""); setFormPin(""); setFormRole("Standard"); setFormDossiers([]); setFormPerms([]); setShowForm(true); };
+  const openEditForm = (u: Utilisateur) => { setEditingUser(u); setFormNom(u.nom); setFormPin(u.pin); setFormRole(u.role); setFormDossiers(u.dossierIds || []); setFormPerms(u.permissions || []); setShowForm(true); };
   const handleDeleteUser    = async (id: string) => { if (!confirm("Supprimer ?")) return; await fetch(`/api/utilisateurs/${id}`, { method: "DELETE" }); await fetchData(); };
   const handleDeleteDossier = async (id: string) => { if (!confirm("Supprimer ?")) return; await fetch(`/api/dossiers/${id}`, { method: "DELETE" }); await fetchData(); };
   const toggleDossier = (id: string) => setFormDossiers(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
+  const togglePerm = (key: string) => setFormPerms(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
 
   const handleSaveUser = async () => {
     if (!formNom || formPin.length !== 4) return;
     setSavingUser(true);
     try {
       if (editingUser) {
-        await fetch(`/api/utilisateurs/${editingUser.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nom: formNom, pin: formPin, role: formRole, dossierIds: formDossiers }) });
+        await fetch(`/api/utilisateurs/${editingUser.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nom: formNom, pin: formPin, role: formRole, dossierIds: formDossiers, permissions: formRole === "Admin" ? [] : formPerms }) });
       } else {
-        await fetch("/api/utilisateurs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nom: formNom, pin: formPin, role: formRole, dossierIds: formDossiers }) });
+        await fetch("/api/utilisateurs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nom: formNom, pin: formPin, role: formRole, dossierIds: formDossiers, permissions: formRole === "Admin" ? [] : formPerms }) });
       }
       setShowForm(false);
       await fetchData();
@@ -241,6 +244,36 @@ export default function AdminPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Permissions à la carte (masquées pour Admin = accès complet) */}
+              {formRole === "Admin" ? (
+                <div style={{ background: "rgba(255,193,7,0.10)", border: "1px solid rgba(255,193,7,0.3)", borderRadius: "14px", padding: "14px", fontSize: "13px", color: "#ffce54" }}>
+                  👑 Admin : accès complet à toutes les fonctionnalités. Les permissions ci-dessous ne s'appliquent qu'aux comptes Standard.
+                </div>
+              ) : (
+                <div>
+                  <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>Permissions accordées</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    {PERMISSIONS.map(g => (
+                      <div key={g.groupe}>
+                        <p style={{ fontSize: "12px", fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: "6px" }}>{g.groupe}</p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          {g.items.map(it => {
+                            const on = formPerms.includes(it.key);
+                            return (
+                              <button key={it.key} onClick={() => togglePerm(it.key)} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", borderRadius: "12px", cursor: "pointer", fontFamily: "inherit", fontSize: "13px", fontWeight: 600, background: on ? "rgba(255,77,90,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${on ? "rgba(255,77,90,0.3)" : "rgba(255,255,255,0.07)"}`, color: on ? "#ff8a94" : "rgba(255,255,255,0.65)", textAlign: "left" }}>
+                                <div style={{ width: "18px", height: "18px", borderRadius: "5px", border: `2px solid ${on ? "#ff4d5a" : "rgba(255,255,255,0.2)"}`, background: on ? "#ff4d5a" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "white", flexShrink: 0 }}>{on && "✓"}</div>
+                                <span>{it.label}{it.note && <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: 400 }}> · {it.note}</span>}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
                 <button onClick={handleSaveUser} disabled={!formNom || formPin.length !== 4 || savingUser} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: !formNom || formPin.length !== 4 ? 0.5 : 1, boxShadow: "0 8px 20px rgba(255,77,90,0.3)" }}>
                   {savingUser ? "Enregistrement..." : editingUser ? "💾 Enregistrer" : "➕ Créer"}

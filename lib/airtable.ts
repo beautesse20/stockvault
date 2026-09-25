@@ -46,6 +46,7 @@ export type Utilisateur = {
   pin: string;
   role: "Admin" | "Standard";
   dossierIds?: string[];
+  permissions?: string[];
 };
 
 // ── DOSSIERS ──
