@@ -3,7 +3,7 @@ import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import HomeButton from "@/components/HomeButton";
 import RouteLogger from "./RouteLogger";
-import PresentToggle from "@/components/PresentToggle";
+import DemoBanner from "@/components/DemoBanner";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
@@ -73,7 +73,7 @@ export default function RootLayout({
         {children}
         <RouteLogger />
         <HomeButton />
-        <PresentToggle />
+        <DemoBanner />
       </body>
     </html>
   );

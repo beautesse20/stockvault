@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Utilisateur, Dossier } from "@/lib/airtable";
 import { PERMISSIONS } from "@/lib/permissions";
+import SlideToConfirm from "@/components/SlideToConfirm";
 
 export default function AdminPage() {
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
@@ -285,8 +286,18 @@ export default function AdminPage() {
         </div>
       )}
 
+      {/* Mode présentation */}
+      <div style={{ marginTop: "28px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: "16px", padding: "16px" }}>
+        <div style={{ fontSize: "13px", fontWeight: 700, color: "white", marginBottom: "4px" }}>🎭 Mode présentation</div>
+        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", marginBottom: "14px" }}>Affiche des données <b>fictives</b> sur toutes les apps (StockVault, Ventes, PartStack) pour montrer l&apos;app sans exposer tes vrais chiffres/stock. Glisse pour activer ; un bandeau permettra de quitter à tout moment.</div>
+        <SlideToConfirm label="Glisser pour activer la démo →" onConfirm={() => {
+          try { localStorage.setItem("bm_present", "1"); Object.keys(localStorage).forEach(k => { if (k.indexOf("svcache:") === 0) localStorage.removeItem(k); }); } catch {}
+          window.location.href = "/dossiers";
+        }} />
+      </div>
+
       {/* Aide & documentation */}
-      <div style={{ marginTop: "28px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "16px" }}>
+      <div style={{ marginTop: "16px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "16px" }}>
         <div style={{ fontSize: "13px", fontWeight: 700, color: "white", marginBottom: "4px" }}>📖 Aide &amp; documentation</div>
         <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", marginBottom: "12px" }}>Le manuel complet de toutes les apps : rôles, fonctionnalités, liens entre elles.</div>
         <div style={{ display: "flex", gap: "8px" }}>
