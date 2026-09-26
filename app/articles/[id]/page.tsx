@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getSession, authHeaders } from "@/lib/auth";
+import { getSession, authHeaders, can } from "@/lib/auth";
 import { logEvent } from "@/lib/audit";
 import { Article, Dossier } from "@/lib/airtable";
 import { thumb, medium } from "@/lib/img";
@@ -528,8 +528,8 @@ export default function ArticlePage() {
           <div style={{ position: "absolute", top: "18px", right: "14px", background: "white", borderRadius: "10px", padding: "5px 10px", fontSize: "10px", fontWeight: 700, color: "#1a1f3a", boxShadow: "0 2px 10px rgba(26,31,58,0.12)" }}>{images.length} / 10 📷</div>
         )}
 
-        {/* Bouton supprimer photo — Admin seulement */}
-        {images.length > 0 && (
+        {/* Bouton supprimer photo — permission stock.delete */}
+        {can("stock.delete") && images.length > 0 && (
           <button onClick={() => setModal({ message: "Supprimer cette photo ?", onConfirm: () => handleDeleteImage(photoIdx) })} style={{ position: "absolute", bottom: "18px", right: "14px", width: "64px", height: "64px", borderRadius: "18px", background: "rgba(255,77,90,0.9)", border: "none", cursor: "pointer", fontSize: "26px", color: "white" }}>🗑</button>
         )}
 
@@ -564,8 +564,8 @@ export default function ArticlePage() {
           )}
         </div>
 
-        {/* Affichage sur le site — Admin seulement */}
-        {isAdmin && !editing && (
+        {/* Affichage sur le site — permission site.publish */}
+        {can("site.publish") && !editing && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "12px 14px", marginBottom: "16px" }}>
             <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: "12px", fontWeight: 700, color: "white", marginBottom: "3px" }}>🌐 Affichage sur le site</p>
@@ -632,8 +632,8 @@ export default function ArticlePage() {
           </div>
         )}
 
-        {/* Historique / Réparations — Admin seulement, jamais public ni dans les annonces */}
-        {isAdmin && !editing && (() => {
+        {/* Historique / Réparations — permission article.history, jamais public ni dans les annonces */}
+        {can("article.history") && !editing && (() => {
           const hist = (((article as any).historique) || []).map((h: any, i: number) => ({ ...h, _i: i }))
             .sort((a: any, b: any) => String(b.date).localeCompare(String(a.date)));
           const fmt = (iso: string) => { try { return new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return iso; } };
@@ -691,8 +691,8 @@ export default function ArticlePage() {
                 <img src={thumb(img.url)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </button>
             ))}
-            {/* Upload photo — Admin seulement */}
-            {images.length < 10 && (
+            {/* Upload photo — permission stock.edit */}
+            {can("stock.edit") && images.length < 10 && (
               <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ width: "64px", height: "64px", borderRadius: "16px", border: "2px dashed rgba(255,255,255,0.2)", flexShrink: 0, background: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontSize: "10px", gap: "3px" }}>
                 {uploading ? <div style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <><span style={{ fontSize: "20px" }}>📷</span><span>Photo</span></>}
               </button>
@@ -705,28 +705,28 @@ export default function ArticlePage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {!editing ? (
             <>
-              {/* Modifier — Admin seulement */}
-              {isAdmin && (
+              {/* Modifier — permission stock.edit */}
+              {can("stock.edit") && (
                 <button onClick={() => setEditing(true)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #ff4d5a, #ff6b35)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(255,77,90,0.35)" }}>✏️ Modifier l'article</button>
               )}
-              {/* Rédiger annonce — Admin seulement (panneau inline, plus de détour launcher) */}
-              {isAdmin && (
+              {/* Rédiger annonce — permission annonces.generate */}
+              {can("annonces.generate") && (
                 <button onClick={() => { setAnnPlats([]); setAnnPrecision(""); setAnnPreavis(false); setAnnResults(null); setAnnErr(""); setPrixReel(null); setPrixErr(false); setPrixLoading(false); setPrixLbc(null); setPrixLbcErr(false); setPrixLbcLoading(false); setPrixCanada(null); setPrixCanadaErr(false); setPrixCanadaLoading(false); setShowAnnonce(true); }} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #f59e0b, #d97706)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(245,158,11,0.35)" }}>✍️ Rédiger une annonce</button>
               )}
-              {/* Enregistrer la vente — Admin : ouvre Suivi des ventes avec l'article pré-sélectionné */}
-              {isAdmin && article && (
+              {/* Enregistrer la vente — permission ventes.record */}
+              {can("ventes.record") && article && (
                 <button onClick={() => router.push(`/launcher?app=ventes&ref=${encodeURIComponent(article.ref || "")}&nom=${encodeURIComponent(article.nom || "")}&type=${encodeURIComponent(article.type || "")}`)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #10b981, #059669)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(16,185,129,0.35)" }}>💵 Enregistrer la vente</button>
               )}
-              {/* Transformer en pièce PartStack — Admin seulement */}
-              {isAdmin && article && (
+              {/* Transformer en pièce PartStack — permission article.transform */}
+              {can("article.transform") && article && (
                 <button onClick={() => setModal({ message: `Transformer « ${article.nom} » en pièce PartStack ?\nL'article sera retiré de StockVault (toutes les infos + photos sont conservées dans PartStack).`, onConfirm: transformerEnPiece })} disabled={transforming} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #6d28d9, #9333ea)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(147,51,234,0.35)", opacity: transforming ? 0.6 : 1 }}>{transforming ? "Transformation…" : "🔧 Transformer en pièce"}</button>
               )}
               {/* Partager — envoie un lien vers la fiche publique via le menu natif */}
               <button onClick={handlePartager} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(99,102,241,0.35)" }}>📤 Partager</button>
               {/* Déplacer — tous les utilisateurs, mais dossiers filtrés */}
               <button onClick={() => setShowMove(true)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>📂 Déplacer vers un dossier</button>
-              {/* Supprimer l'article — Admin seulement */}
-              {isAdmin && (
+              {/* Supprimer l'article — permission stock.delete */}
+              {can("stock.delete") && (
                 <button onClick={() => setModal({ message: "Supprimer définitivement cet article ?", onConfirm: handleDeleteArticle })} disabled={saving} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "rgba(255,77,90,0.12)", border: "1px solid rgba(255,77,90,0.3)", color: "#ff4d5a", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>🗑 Supprimer l'article</button>
               )}
             </>
@@ -756,7 +756,7 @@ export default function ArticlePage() {
         )}
 
         {/* Annonces enregistrées pour ce produit (relues depuis l'onglet Annonces IA) */}
-        {isAdmin && annSaved.length > 0 && (
+        {can("annonces.generate") && annSaved.length > 0 && (
           <div style={{ marginTop: "22px" }}>
             <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.5)", marginBottom: "10px" }}>📢 Annonces générées ({annSaved.length})</p>
             {annSaved.map((a, i) => {
@@ -953,8 +953,8 @@ export default function ArticlePage() {
           <button onClick={() => setLightbox(false)} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", color: "white", fontSize: "20px", cursor: "pointer", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           <button onClick={() => handleShareImage(images[photoIdx]?.url, `photo-${photoIdx + 1}.jpg`)} style={{ position: "absolute", top: "calc(16px + env(safe-area-inset-top))", left: "16px", width: "44px", height: "44px", borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", cursor: "pointer", zIndex: 2 }}>⬇️</button>
           <img src={medium(images[photoIdx]?.url)} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
-          {/* Supprimer la photo en plein écran (en plus du bouton de la fiche) */}
-          {images.length > 0 && (
+          {/* Supprimer la photo en plein écran — permission stock.delete */}
+          {can("stock.delete") && images.length > 0 && (
             <button onClick={() => setModal({ message: "Supprimer cette photo ?", onConfirm: () => handleDeleteImage(photoIdx) })} style={{ position: "absolute", bottom: `calc(${images.length > 1 ? 92 : 24}px + env(safe-area-inset-bottom))`, right: "20px", width: "56px", height: "56px", borderRadius: "16px", background: "rgba(255,77,90,0.92)", border: "none", cursor: "pointer", fontSize: "24px", color: "white", zIndex: 3, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(0,0,0,0.4)" }}>🗑</button>
           )}
           {/* Bande de miniatures cliquables (plein écran) */}

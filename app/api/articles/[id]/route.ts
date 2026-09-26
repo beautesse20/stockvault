@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getArticle, updateArticle, deleteArticle } from "@/lib/firebase";
+import { requireCap } from "@/lib/token";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+// Un non-Admin ne peut toucher qu'un article de SES dossiers.
+function dossierOk(g: any, article: any) {
+  return g.role === "Admin" || (g.dossierIds || []).includes(article?.dossierId);
+}
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const g = requireCap(req, "stock.view");
+    if (!g) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     const { id } = await params;
     const article = await getArticle(id);
+    if (!dossierOk(g, article)) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     return NextResponse.json({ article });
   } catch (e) {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
@@ -22,7 +31,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const g = requireCap(req, "stock.edit");
+    if (!g) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     const { id } = await params;
+    if (g.role !== "Admin") {
+      const a = await getArticle(id);
+      if (!dossierOk(g, a)) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    }
     const fields = await req.json();
     await updateArticle(id, fields);
     return NextResponse.json({ success: true });
@@ -36,10 +51,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const g = requireCap(req, "stock.delete");
+    if (!g) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     const { id } = await params;
 
     // Récupérer la ref avant de supprimer
     const article = await getArticle(id);
+    if (!dossierOk(g, article)) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     const ref     = article.ref;
 
     // Supprimer de Firebase

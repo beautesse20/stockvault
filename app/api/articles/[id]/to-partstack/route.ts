@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getArticle, deleteArticle } from "@/lib/firebase";
+import { requireCap } from "@/lib/token";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,9 +41,12 @@ async function nextRef(base: string): Promise<string> {
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const g = requireCap(req, "article.transform");
+    if (!g) return NextResponse.json({ success: false, error: "Accès refusé" }, { status: 403 });
     const { id } = await params;
     const a: any = await getArticle(id);
     if (!a) return NextResponse.json({ success: false, error: "Article introuvable" }, { status: 404 });
+    if (g.role !== "Admin" && !(g.dossierIds || []).includes(a.dossierId)) return NextResponse.json({ success: false, error: "Accès refusé" }, { status: 403 });
 
     const brand = deriveBrand(a.nom);
     const base  = `${BRAND_CD[brand] || "AU"}${mShort(a.nom)}-${CHA}`;
