@@ -9,7 +9,23 @@ const dmSans = DM_Sans({ subsets: ["latin"] });
 
 // Fait porter le jeton (localStorage) à tous les appels /api de StockVault, dès le
 // chargement (avant tout JS d'app) → le serveur peut vérifier les permissions.
-const AUTH_BOOT = `(function(){try{var TK="stockvault_token";if(window.__authFetchPatched)return;var orig=window.fetch.bind(window);window.fetch=function(input,init){init=init||{};try{var url=typeof input==="string"?input:(input&&input.url)||"";var isApi=url.indexOf("/api/")===0||url.indexOf(location.origin+"/api/")>-1;var tok="";try{tok=localStorage.getItem(TK)||"";}catch(e){}if(isApi&&tok){var hd=new Headers((init&&init.headers)||(typeof input!=="string"&&input.headers)||{});if(!hd.has("Authorization"))hd.set("Authorization","Bearer "+tok);return orig(input,Object.assign({},init,{headers:hd}));}}catch(e){}return orig(input,init);};window.__authFetchPatched=true;}catch(e){}})();`;
+const AUTH_BOOT = `(function(){try{var TK="stockvault_token";
+function tok(){try{return localStorage.getItem(TK)||"";}catch(e){return "";}}
+function tokValid(){var t=tok();if(!t)return false;try{var p=JSON.parse(atob(t.split(".")[1].replace(/-/g,'+').replace(/_/g,'/')));return !!(p&&p.exp&&p.exp>Date.now());}catch(e){return false;}}
+try{if(tokValid())sessionStorage.removeItem("reauth_redir");}catch(e){}
+function reauth(){try{if(sessionStorage.getItem("reauth_redir")==="1")return;sessionStorage.setItem("reauth_redir","1");localStorage.removeItem("stockvault_user");localStorage.removeItem(TK);}catch(e){}location.href="/";}
+if(window.__authFetchPatched)return;
+var orig=window.fetch.bind(window);
+window.fetch=function(input,init){init=init||{};
+ var url=typeof input==="string"?input:(input&&input.url)||"";
+ var isApi=url.indexOf("/api/")===0||url.indexOf(location.origin+"/api/")>-1;
+ var isLogin=url.indexOf("/api/login")>-1;
+ var call;
+ try{var t=tok();if(isApi&&t){var hd=new Headers((init&&init.headers)||(typeof input!=="string"&&input.headers)||{});if(!hd.has("Authorization"))hd.set("Authorization","Bearer "+t);call=orig(input,Object.assign({},init,{headers:hd}));}else{call=orig(input,init);}}catch(e){return orig(input,init);}
+ if(isApi&&!isLogin){return call.then(function(r){try{if(r&&r.status===403&&!tokValid())reauth();}catch(e){}return r;});}
+ return call;
+};
+window.__authFetchPatched=true;}catch(e){}})();`;
 
 // MODE PRÉSENTATION : si activé (localStorage bm_present="1"), on renvoie de FAUSSES
 // données pour toutes les routes sensibles (aucune vraie donnée chargée) et on bloque

@@ -200,12 +200,10 @@ export default function LauncherPage() {
           if (d.success) { found = d.user; token = d.token; }
           else if (res.status !== 401) serverErr = true; // 401 = vrai mauvais code ; autre = souci serveur
         } catch { serverErr = true; }
-        // Filet de sécurité : si l'API a un souci (pas un mauvais code), on retombe
-        // sur l'ancienne connexion pour ne jamais bloquer l'accès.
-        if (!found && serverErr) {
-          try { const u = await loginByPin(newPin); if (u) found = { id: u.id, nom: u.nom, role: u.role, dossierIds: u.dossierIds || [], permissions: u.permissions }; } catch {}
-        }
+        // NB : on n'utilise plus de repli sans jeton (il créait des sessions sans
+        // jeton → accès refusé partout une fois le verrou serveur actif).
         if (found) {
+          try { sessionStorage.removeItem("reauth_redir"); } catch {}
           saveSession(found, token);
           logEvent("connexion", { cible: found.nom, details: `Rôle ${found.role}` });
           setUser(found);
