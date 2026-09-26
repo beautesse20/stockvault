@@ -240,6 +240,9 @@ export default function LauncherPage() {
     // pour prouver l'identité + les permissions côté serveur.
     const tk = getToken();
     if (tk) u += (u.includes("#") ? "&" : "#") + "tk=" + encodeURIComponent(tk);
+    // Propage le mode présentation aux sous-apps (fausses données côté Ventes/PartStack).
+    let present = "0"; try { present = localStorage.getItem("bm_present") === "1" ? "1" : "0"; } catch {}
+    u += (u.includes("?") ? "&" : "?") + "present=" + present;
     return u;
   };
 
