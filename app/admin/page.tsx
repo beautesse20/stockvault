@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Utilisateur, Dossier } from "@/lib/airtable";
-import { PERMISSIONS } from "@/lib/permissions";
+import { PERMISSIONS, expandPerms } from "@/lib/permissions";
 import SlideToConfirm from "@/components/SlideToConfirm";
 
 export default function AdminPage() {
@@ -49,7 +49,8 @@ export default function AdminPage() {
   const handleDeleteUser    = async (id: string) => { if (!confirm("Supprimer ?")) return; await fetch(`/api/utilisateurs/${id}`, { method: "DELETE" }); await fetchData(); };
   const handleDeleteDossier = async (id: string) => { if (!confirm("Supprimer ?")) return; await fetch(`/api/dossiers/${id}`, { method: "DELETE" }); await fetchData(); };
   const toggleDossier = (id: string) => setFormDossiers(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
-  const togglePerm = (key: string) => setFormPerms(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  // Cocher une action ajoute aussi la lecture impliquée (ex. modifier ⇒ voir).
+  const togglePerm = (key: string) => setFormPerms(prev => prev.includes(key) ? prev.filter(k => k !== key) : expandPerms([...prev, key]));
 
   const handleSaveUser = async () => {
     if (!formNom || formPin.length !== 4) return;

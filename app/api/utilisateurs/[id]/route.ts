@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateUtilisateur, deleteUtilisateur } from "@/lib/firebase";
-import { requireCap } from "@/lib/token";
+import { requireCap, denyStatus } from "@/lib/token";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -10,7 +10,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!requireCap(req, "admin.users")) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    if (!requireCap(req, "admin.users")) return NextResponse.json({ error: "Accès refusé" }, { status: denyStatus(req) });
     const { id } = await params;
     const fields = await req.json();
     await updateUtilisateur(id, fields);
@@ -25,7 +25,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!requireCap(req, "admin.users")) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    if (!requireCap(req, "admin.users")) return NextResponse.json({ error: "Accès refusé" }, { status: denyStatus(req) });
     const { id } = await params;
     await deleteUtilisateur(id);
     return NextResponse.json({ success: true });

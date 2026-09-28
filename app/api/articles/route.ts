@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getArticles } from "@/lib/firebase";
-import { requireCap } from "@/lib/token";
+import { requireCap, denyStatus } from "@/lib/token";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,7 +8,7 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   try {
     const g = requireCap(req, "stock.view");
-    if (!g) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    if (!g) return NextResponse.json({ error: "Accès refusé" }, { status: denyStatus(req) });
     const { searchParams } = new URL(req.url);
     const dossierId = searchParams.get("dossierId") || undefined;
     let articles = await getArticles(dossierId);

@@ -67,12 +67,31 @@ export const ALL_PERMS: string[] = PERMISSIONS.flatMap((g) => g.items.map((i) =>
 // enregistrée) : ce qu'ils pouvaient déjà faire avant, ni plus ni moins.
 export const LEGACY_STANDARD_PERMS = ["stock.view", "stock.edit"];
 
-// Permissions EFFECTIVES d'un utilisateur (Admin = tout ; sinon ses permissions,
-// avec repli legacy pour les comptes non encore migrés).
+// Dépendances : une permission d'ACTION implique la permission de LECTURE
+// correspondante (modifier/supprimer/transformer un article n'a aucun sens sans
+// pouvoir le voir). On les ajoute automatiquement → un profil « stock.edit » sans
+// « stock.view » fonctionne quand même (launcher + serveur), sans réédition.
+const IMPLIES: Record<string, string[]> = {
+  "stock.edit":        ["stock.view"],
+  "stock.delete":      ["stock.view"],
+  "article.transform": ["stock.view"],
+  "article.history":   ["stock.view"],
+  "partstack.edit":    ["partstack.view"],
+};
+
+// Ajoute les permissions impliquées (fermeture transitive simple, 1 niveau suffit ici).
+export function expandPerms(keys: string[]): string[] {
+  const out = new Set(keys);
+  keys.forEach((k) => (IMPLIES[k] || []).forEach((d) => out.add(d)));
+  return Array.from(out);
+}
+
+// Permissions EFFECTIVES d'un utilisateur (Admin = tout ; sinon ses permissions
+// + les lectures impliquées, avec repli legacy pour les comptes non migrés).
 export function permsOf(user: { role?: string; permissions?: string[] } | null | undefined): string[] {
   if (!user) return [];
   if (user.role === "Admin") return ALL_PERMS;
-  if (Array.isArray(user.permissions)) return user.permissions;
+  if (Array.isArray(user.permissions)) return expandPerms(user.permissions);
   return LEGACY_STANDARD_PERMS;
 }
 

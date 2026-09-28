@@ -67,3 +67,12 @@ export function requireCap(req: Request, key: string): SessionClaims | null {
   if (claims.role === "Admin") return claims;
   return Array.isArray(claims.perms) && claims.perms.includes(key) ? claims : null;
 }
+
+// Statut HTTP à renvoyer quand requireCap a refusé :
+//   401 = pas (ou plus) authentifié → le client doit se reconnecter.
+//   403 = authentifié mais sans le droit → afficher « accès refusé », pas de reconnexion.
+// Distinguer les deux évite qu'un jeton absent/rejeté bloque à vie (ex. admin
+// coincé sur « aucun dossier ») : sur 401 le client se ré-authentifie.
+export function denyStatus(req: Request): 401 | 403 {
+  return claimsFromRequest(req) ? 403 : 401;
+}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getArticle, updateArticle } from "@/lib/firebase";
-import { requireCap } from "@/lib/token";
+import { requireCap, denyStatus } from "@/lib/token";
 import { v2 as cloudinary } from "cloudinary";
 
 cloudinary.config({
@@ -14,7 +14,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!requireCap(req, "stock.edit")) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    if (!requireCap(req, "stock.edit")) return NextResponse.json({ error: "Accès refusé" }, { status: denyStatus(req) });
     const { id }   = await params;
     const formData = await req.formData();
     const file     = formData.get("file") as File;
@@ -59,7 +59,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!requireCap(req, "stock.delete")) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    if (!requireCap(req, "stock.delete")) return NextResponse.json({ error: "Accès refusé" }, { status: denyStatus(req) });
     const { id }     = await params;
     const body       = await req.json();
     const imageIndex = body.imageIndex;

@@ -22,7 +22,7 @@ window.fetch=function(input,init){init=init||{};
  var isLogin=url.indexOf("/api/login")>-1;
  var call;
  try{var t=tok();if(isApi&&t){var hd=new Headers((init&&init.headers)||(typeof input!=="string"&&input.headers)||{});if(!hd.has("Authorization"))hd.set("Authorization","Bearer "+t);call=orig(input,Object.assign({},init,{headers:hd}));}else{call=orig(input,init);}}catch(e){return orig(input,init);}
- if(isApi&&!isLogin){return call.then(function(r){try{if(r&&r.status===403&&!tokValid())reauth();}catch(e){}return r;});}
+ if(isApi&&!isLogin){return call.then(function(r){try{if(r&&r.status===401)reauth();}catch(e){}return r;});}
  return call;
 };
 window.__authFetchPatched=true;}catch(e){}})();`;
@@ -50,6 +50,10 @@ window.fetch=function(input,init){init=init||{};try{
   if(/^\\/api\\/vendus-mois/.test(p))return J({success:true,ventes:[{dossierId:"d1"},{dossierId:"d2"}]});
   if(/^\\/api\\/listings/.test(p))return J({success:true,listings:[]});
   if(/^\\/api\\/annonces/.test(p))return J({success:true,entries:[]});
+  if(/^\\/api\\/login/.test(p))return orig(input,init);
+  // REFUS PAR DÉFAUT : toute autre route API renvoie du vide neutre,
+  // jamais le vrai serveur → aucune vraie donnée ne peut fuiter en démo.
+  return J({success:true,demo:true,dossiers:[],articles:[],ventes:[],listings:[],entries:[],items:[],lots:[],utilisateurs:[]});
  }
 }catch(e){}return orig(input,init);};}catch(e){}})();`;
 
