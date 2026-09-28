@@ -9,7 +9,7 @@ const dmSans = DM_Sans({ subsets: ["latin"] });
 
 // Fait porter le jeton (localStorage) à tous les appels /api de StockVault, dès le
 // chargement (avant tout JS d'app) → le serveur peut vérifier les permissions.
-const AUTH_BOOT = `(function(){try{var TK="stockvault_token";
+const AUTH_BOOT = `(function(){try{window.__MARK_LAYOUT="MK_LAYOUT_991";var TK="stockvault_token";
 function tok(){try{return localStorage.getItem(TK)||"";}catch(e){return "";}}
 function tokValid(){var t=tok();if(!t)return false;try{var p=JSON.parse(atob(t.split(".")[1].replace(/-/g,'+').replace(/_/g,'/')));return !!(p&&p.exp&&p.exp>Date.now());}catch(e){return false;}}
 try{if(tokValid())sessionStorage.removeItem("reauth_redir");}catch(e){}
