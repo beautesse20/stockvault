@@ -9,8 +9,13 @@ const dmSans = DM_Sans({ subsets: ["latin"] });
 
 // Fait porter le jeton (localStorage) à tous les appels /api de StockVault, dès le
 // chargement (avant tout JS d'app) → le serveur peut vérifier les permissions.
-const AUTH_BOOT = `(function(){try{window.__MARK_LAYOUT="MK_LAYOUT_991";var TK="stockvault_token";
-function tok(){try{return localStorage.getItem(TK)||"";}catch(e){return "";}}
+const AUTH_BOOT = `(function(){try{var TK="stockvault_token";
+function ck(){try{var m=(document.cookie||"").match(/(?:^|;\\s*)sv_token=([^;]+)/);return m?decodeURIComponent(m[1]):"";}catch(e){return "";}}
+function tok(){try{return localStorage.getItem(TK)||ck();}catch(e){return ck();}}
+// Pont cookie → localStorage : si le client n'a pas stocké le jeton (ex. launcher
+// gelé qui ne pose que l'utilisateur), on le récupère du cookie sv_token posé par
+// /api/login. Rend la session complète pour getToken()/withUser (sous-apps).
+try{if(!localStorage.getItem(TK)){var _c=ck();if(_c)localStorage.setItem(TK,_c);}}catch(e){}
 function tokValid(){var t=tok();if(!t)return false;try{var p=JSON.parse(atob(t.split(".")[1].replace(/-/g,'+').replace(/_/g,'/')));return !!(p&&p.exp&&p.exp>Date.now());}catch(e){return false;}}
 try{if(tokValid())sessionStorage.removeItem("reauth_redir");}catch(e){}
 function reauth(){try{if(sessionStorage.getItem("reauth_redir")==="1")return;sessionStorage.setItem("reauth_redir","1");localStorage.removeItem("stockvault_user");localStorage.removeItem(TK);}catch(e){}location.href="/";}

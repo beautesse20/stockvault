@@ -22,7 +22,15 @@ export async function POST(req: NextRequest) {
 
     // On ne renvoie JAMAIS le pin.
     const user = { id: u.id, nom: u.nom, role: u.role, dossierIds, permissions: perms };
-    return NextResponse.json({ success: true, user, token });
+    const res = NextResponse.json({ success: true, user, token });
+    // Pont cookie : on pose aussi le jeton en cookie (lisible), pour que la
+    // session tienne même si le client ne le stocke pas (compat + secours serveur).
+    // Non-httpOnly volontairement : AUTH_BOOT le recopie dans localStorage.
+    res.cookies.set("sv_token", token, {
+      httpOnly: false, sameSite: "lax", secure: true, path: "/",
+      maxAge: 30 * 24 * 3600,
+    });
+    return res;
   } catch (e: any) {
     return NextResponse.json({ success: false, error: "Erreur serveur" }, { status: 500 });
   }

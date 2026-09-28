@@ -184,7 +184,6 @@ export default function LauncherPage() {
   }, []);
 
   const handlePress = async (val: string) => {
-    try { (window as any).__MARK_LAUNCHER = "MK_LAUNCHER_991"; } catch {}
     if (pin.length >= 4) return;
     const newPin = pin + val;
     setPin(newPin);

@@ -53,11 +53,18 @@ export function verifyToken(token: string | null | undefined): SessionClaims | n
   }
 }
 
-// Lit le jeton depuis l'en-tête Authorization: Bearer <token>.
+// Lit le jeton depuis l'en-tête Authorization: Bearer <token>, avec repli sur
+// le cookie sv_token (pont de session : tient même si le client n'attache pas
+// l'en-tête). Les deux sources sont vérifiées (signature + expiration).
 export function claimsFromRequest(req: Request): SessionClaims | null {
   const h = req.headers.get("authorization") || req.headers.get("Authorization") || "";
   const m = h.match(/^Bearer\s+(.+)$/i);
-  return verifyToken(m ? m[1] : null);
+  const fromHeader = verifyToken(m ? m[1] : null);
+  if (fromHeader) return fromHeader;
+  // Repli cookie
+  const cookie = req.headers.get("cookie") || "";
+  const cm = cookie.match(/(?:^|;\s*)sv_token=([^;]+)/);
+  return verifyToken(cm ? decodeURIComponent(cm[1]) : null);
 }
 
 // Garde serveur : renvoie les claims si la permission est accordée, sinon null.
