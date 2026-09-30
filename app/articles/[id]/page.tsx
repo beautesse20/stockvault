@@ -608,7 +608,8 @@ export default function ArticlePage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
             {[
-              { label: "Nom",      key: "nom" },
+              { label: "Nom",         key: "nom" },
+              { label: "Description", key: "description" },
               { label: "Prix (€)", key: "prix", type: "number" },
               { label: "Stockage", key: "stockage" },
               { label: "Couleur",  key: "couleur" },
@@ -629,6 +630,14 @@ export default function ArticlePage() {
                 <option value="Non">Non</option>
               </select>
             </div>
+          </div>
+        )}
+
+        {/* Description (surtout articles "divers") — pleine largeur, hors grille */}
+        {!editing && (article as any).description && (
+          <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "10px 12px", marginBottom: "16px" }}>
+            <p style={{ fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.5px", color: "rgba(255,255,255,0.25)", fontWeight: 600, marginBottom: "3px" }}>Description</p>
+            <p style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.85)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{(article as any).description}</p>
           </div>
         )}
 
