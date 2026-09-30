@@ -25,6 +25,7 @@ export default function ArticlePage() {
   const [isAdmin, setIsAdmin]     = useState(false);
   const [userSession, setUserSession] = useState<any>(null);
   const [visSaving, setVisSaving] = useState(false);
+  const [photo1Saving, setPhoto1Saving] = useState(false);
   const [modal, setModal]         = useState<null | { message: string; onConfirm?: () => void }>(null);
   const [histText, setHistText]   = useState("");
   const [histBusy, setHistBusy]   = useState(false);
@@ -324,6 +325,28 @@ export default function ArticlePage() {
     }
   };
 
+  // Exception à la règle "1ère photo masquée sur le site" pour CE produit.
+  const togglePhoto1 = async () => {
+    if (!article) return;
+    const nouveau = !((article as any).photo1Publique === true);
+    setPhoto1Saving(true);
+    try {
+      const res = await fetch(`/api/articles/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photo1Publique: nouveau }),
+      });
+      if (!res.ok) throw new Error("échec");
+      setArticle(prev => (prev ? ({ ...prev, photo1Publique: nouveau } as any) : prev));
+      setForm(prev => ({ ...prev, photo1Publique: nouveau }));
+    } catch (e) {
+      console.error(e);
+      setModal({ message: "Impossible de modifier l'affichage de la 1ère photo. Réessaie." });
+    } finally {
+      setPhoto1Saving(false);
+    }
+  };
+
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (fileRef.current) fileRef.current.value = "";
@@ -587,6 +610,29 @@ export default function ArticlePage() {
             </button>
           </div>
         )}
+
+        {/* 1ère photo sur le site — exception à la règle (seulement si ≥2 photos) */}
+        {can("site.publish") && !editing && images.length >= 2 && (() => {
+          const photo1Public = (article as any).photo1Publique === true;
+          return (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "12px 14px", marginBottom: "16px" }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: "12px", fontWeight: 700, color: "white", marginBottom: "3px" }}>🖼️ 1ère photo sur le site</p>
+                <p style={{ fontSize: "10px", color: photo1Public ? "#10b981" : "#8892b0" }}>
+                  {photo1Public ? "Affichée (exception activée)" : "Masquée par défaut (règle du site)"}
+                </p>
+              </div>
+              <button
+                onClick={togglePhoto1}
+                disabled={photo1Saving}
+                title={photo1Public ? "Revenir à la règle (masquer la 1ère photo)" : "Afficher la 1ère photo sur le site"}
+                style={{ position: "relative", width: "50px", height: "28px", borderRadius: "50px", border: "none", cursor: "pointer", flexShrink: 0, background: photo1Public ? "linear-gradient(135deg, #10b981, #059669)" : "rgba(255,255,255,0.18)", opacity: photo1Saving ? 0.5 : 1, transition: "background 0.2s" }}
+              >
+                <span style={{ position: "absolute", top: "3px", left: photo1Public ? "25px" : "3px", width: "22px", height: "22px", borderRadius: "50%", background: "white", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+              </button>
+            </div>
+          );
+        })()}
 
         {/* Infos article */}
         {!editing ? (
