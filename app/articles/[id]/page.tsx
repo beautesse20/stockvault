@@ -352,7 +352,7 @@ export default function ArticlePage() {
     if (fileRef.current) fileRef.current.value = "";
     if (!files.length) return;
     setTimeout(async () => {
-      const remaining = 10 - (article?.images?.length || 0);
+      const remaining = 15 - (article?.images?.length || 0);
       const toUpload  = files.slice(0, remaining);
       if (!toUpload.length) return;
       setUploading(true);
@@ -548,7 +548,7 @@ export default function ArticlePage() {
         <button onClick={() => router.back()} style={{ position: "absolute", top: "18px", left: "14px", width: "54px", height: "54px", borderRadius: "14px", background: "white", border: "none", cursor: "pointer", boxShadow: "0 2px 10px rgba(26,31,58,0.15)", fontSize: "22px", color: "#1a1f3a" }}>‹</button>
 
         {images.length > 0 && (
-          <div style={{ position: "absolute", top: "18px", right: "14px", background: "white", borderRadius: "10px", padding: "5px 10px", fontSize: "10px", fontWeight: 700, color: "#1a1f3a", boxShadow: "0 2px 10px rgba(26,31,58,0.12)" }}>{images.length} / 10 📷</div>
+          <div style={{ position: "absolute", top: "18px", right: "14px", background: "white", borderRadius: "10px", padding: "5px 10px", fontSize: "10px", fontWeight: 700, color: "#1a1f3a", boxShadow: "0 2px 10px rgba(26,31,58,0.12)" }}>{images.length} / 15 📷</div>
         )}
 
         {/* Bouton supprimer photo — permission stock.delete */}
@@ -737,7 +737,7 @@ export default function ArticlePage() {
                   {downloadingAll ? <><span style={{ width: "10px", height: "10px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} /> Préparation…</> : "⬇️ Tout télécharger"}
                 </button>
               )}
-              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.05)", borderRadius: "50px", padding: "3px 10px" }}>{images.length} / 10</span>
+              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.05)", borderRadius: "50px", padding: "3px 10px" }}>{images.length} / 15</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "6px" }}>
@@ -747,7 +747,7 @@ export default function ArticlePage() {
               </button>
             ))}
             {/* Upload photo — permission stock.edit */}
-            {can("stock.edit") && images.length < 10 && (
+            {can("stock.edit") && images.length < 15 && (
               <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ width: "64px", height: "64px", borderRadius: "16px", border: "2px dashed rgba(255,255,255,0.2)", flexShrink: 0, background: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontSize: "10px", gap: "3px" }}>
                 {uploading ? <div style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <><span style={{ fontSize: "20px" }}>📷</span><span>Photo</span></>}
               </button>

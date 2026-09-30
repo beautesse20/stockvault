@@ -53,7 +53,7 @@ export default function AjouterPage() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const remaining = 10 - images.length;
+    const remaining = 15 - images.length;
     const toUpload  = files.slice(0, remaining);
     setUploading(true);
     try {
@@ -258,7 +258,7 @@ export default function AjouterPage() {
 
             {/* Photos */}
             <div>
-              <label style={labelStyle}>Photos ({images.length}/10)</label>
+              <label style={labelStyle}>Photos ({images.length}/15)</label>
               <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 {images.map((img, i) => (
                   <div key={i} style={{ position: "relative", width: "72px", height: "72px" }}>
@@ -266,7 +266,7 @@ export default function AjouterPage() {
                     <button onClick={() => setImages(prev => prev.filter((_, j) => j !== i))} style={{ position: "absolute", top: "4px", right: "4px", width: "22px", height: "22px", borderRadius: "50%", background: "rgba(255,77,90,0.9)", border: "none", color: "white", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                   </div>
                 ))}
-                {images.length < 10 && (
+                {images.length < 15 && (
                   <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ width: "72px", height: "72px", borderRadius: "14px", border: "2px dashed rgba(255,255,255,0.2)", background: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontSize: "10px", gap: "4px" }}>
                     {uploading ? <div style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#ff4d5a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <><span style={{ fontSize: "22px" }}>📷</span><span>Photo</span></>}
                   </button>

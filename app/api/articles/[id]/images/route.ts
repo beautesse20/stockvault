@@ -37,8 +37,8 @@ export async function POST(
     const article        = await getArticle(id);
     const existingImages = article.images || [];
 
-    if (existingImages.length >= 10) {
-      return NextResponse.json({ error: "Maximum 10 photos atteint" }, { status: 400 });
+    if (existingImages.length >= 15) {
+      return NextResponse.json({ error: "Maximum 15 photos atteint" }, { status: 400 });
     }
 
     const newImages = [
