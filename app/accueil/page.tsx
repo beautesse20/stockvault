@@ -380,6 +380,12 @@ export default function LauncherPage() {
           {/* Barre de recherche globale (réf · nom · défaut · journal · pièces) */}
           {can(user, "stock.view") && (
             <div style={{ position: "relative", width: "100%", maxWidth: "560px", alignSelf: "center", marginBottom: "14px" }}>
+              {/* Champs leurres hors écran : captent l'autofill iOS/Safari (username+password)
+                  pour que la vraie barre ne soit plus classée comme champ de connexion. */}
+              <input type="text" name="username" autoComplete="username" tabIndex={-1} aria-hidden="true" readOnly
+                style={{ position: "absolute", left: "-9999px", top: 0, width: "1px", height: "1px", opacity: 0, pointerEvents: "none" }} />
+              <input type="password" name="password" autoComplete="current-password" tabIndex={-1} aria-hidden="true" readOnly
+                style={{ position: "absolute", left: "-9999px", top: 0, width: "1px", height: "1px", opacity: 0, pointerEvents: "none" }} />
               <div style={{ display: "flex", alignItems: "center", gap: "11px", background: "rgba(255,255,255,0.07)", border: `1px solid ${sq ? "rgba(255,77,90,0.5)" : "rgba(255,255,255,0.12)"}`, borderRadius: "16px", padding: "13px 15px", transition: "border-color 0.15s" }}>
                 <span style={{ color: "#ff4d5a", fontSize: "16px" }}>🔍</span>
                 <input value={sq} readOnly={sqRO}
