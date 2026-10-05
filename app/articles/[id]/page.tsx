@@ -770,7 +770,7 @@ export default function ArticlePage() {
               )}
               {/* Enregistrer la vente — permission ventes.record */}
               {can("ventes.record") && article && (
-                <button onClick={() => router.push(`/launcher?app=ventes&ref=${encodeURIComponent(article.ref || "")}&nom=${encodeURIComponent(article.nom || "")}&type=${encodeURIComponent(article.type || "")}`)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #10b981, #059669)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(16,185,129,0.35)" }}>💵 Enregistrer la vente</button>
+                <button onClick={() => router.push(`/accueil?app=ventes&ref=${encodeURIComponent(article.ref || "")}&nom=${encodeURIComponent(article.nom || "")}&type=${encodeURIComponent(article.type || "")}`)} style={{ width: "100%", padding: "16px", borderRadius: "16px", background: "linear-gradient(135deg, #10b981, #059669)", border: "none", color: "white", fontSize: "15px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(16,185,129,0.35)" }}>💵 Enregistrer la vente</button>
               )}
               {/* Transformer en pièce PartStack — permission article.transform */}
               {can("article.transform") && article && (

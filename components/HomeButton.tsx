@@ -8,12 +8,12 @@ export default function HomeButton() {
   const pathname = usePathname();
 
   // Cacher uniquement sur le launcher
-  if (pathname === "/launcher") return null;
+  if (pathname === "/accueil") return null;
 
   const handleHome = () => {
     const user = getSession();
     if (user?.role === "Admin") {
-      router.push("/launcher");
+      router.push("/accueil");
     } else {
       router.push("/dossiers");
     }
