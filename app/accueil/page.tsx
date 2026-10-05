@@ -115,6 +115,60 @@ export default function LauncherPage() {
   const [user, setUser]       = useState<any>(null);
   const [showApp, setShowApp] = useState<{ url: string; nom: string } | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list"); // disposition des apps
+  // ── Recherche globale (articles : réf/nom/défaut/journal + pièces PartStack) ──
+  const [sq, setSq]           = useState("");
+  const [stock, setStock]     = useState<any[] | null>(null); // null = pas encore chargé
+  const [parts, setParts]     = useState<any[]>([]);
+  const [sqLoading, setSqLoading] = useState(false);
+  const chargerRecherche = async () => {
+    if (stock !== null || sqLoading) return;            // chargé une seule fois
+    setSqLoading(true);
+    try {
+      const KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+      const PROJ = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+      const [ra, rp] = await Promise.all([
+        fetch("/api/articles", { cache: "no-store" }).then(r => r.json()).catch(() => ({})),
+        fetch(`https://firestore.googleapis.com/v1/projects/${PROJ}/databases/(default)/documents/parts?key=${KEY}&pageSize=2000`).then(r => r.json()).catch(() => ({})),
+      ]);
+      setStock(Array.isArray(ra.articles) ? ra.articles : []);
+      const g = (f: any, k: string) => f?.[k]?.stringValue || "";
+      setParts((rp.documents || []).map((d: any) => {
+        const f = d.fields || {};
+        return { id: d.name.split("/").pop(), ref: g(f, "ref"), nom: g(f, "nom") || g(f, "description"), defaut: g(f, "defaut") || g(f, "etat") };
+      }));
+    } finally { setSqLoading(false); }
+  };
+  // Résultats classés : réf (exacte 120 / partielle 100) > nom 50 > défaut 20 > journal 10 ; pièces 40/15.
+  const sqResults = (() => {
+    const q = sq.trim().toLowerCase(); if (!q) return [] as any[];
+    const collapse = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const qc = collapse(q);
+    const m = (s: string) => s.includes(q) || (qc.length >= 3 && collapse(s).includes(qc));
+    const out: any[] = [];
+    (stock || []).forEach((a: any) => {
+      const ref = (a.ref || "").toLowerCase(), nom = (a.nom || "").toLowerCase(), def = (a.defaut || "").toLowerCase();
+      const jr = Array.isArray(a.historique) ? a.historique.map((h: any) => h?.texte || "").join(" ").toLowerCase() : "";
+      let sc = 0, via = "";
+      if (ref === q) { sc = 120; via = "réf"; } else if (m(ref)) { sc = 100; via = "réf"; }
+      if (m(nom) && sc < 50) { sc = 50; via = "nom"; }
+      if (q.length >= 3 && def.includes(q) && sc < 20) { sc = 20; via = "défaut"; }
+      if (q.length >= 3 && jr.includes(q) && sc < 10) { sc = 10; via = "journal"; }
+      if (sc > 0) out.push({ kind: "article", id: a.id, title: a.nom || a.ref || "—", ref: a.ref || "", sub: a.defaut ? "défaut : " + a.defaut : (jr && via === "journal" ? "journal" : ""), via, sc, emoji: (a.type || "").toLowerCase().includes("tél") ? "📱" : "📦" });
+    });
+    (parts || []).forEach((p: any) => {
+      const ref = (p.ref || "").toLowerCase(), nom = (p.nom || "").toLowerCase(), def = (p.defaut || "").toLowerCase();
+      let sc = 0;
+      if (m(ref) || m(nom)) sc = 40; else if (q.length >= 3 && def.includes(q)) sc = 15;
+      if (sc > 0) out.push({ kind: "part", id: p.id, title: p.nom || p.ref || "—", ref: p.ref || "", sub: "pièce PartStack", via: "pièce", sc, emoji: "🔧" });
+    });
+    return out.sort((a, b) => b.sc - a.sc).slice(0, 25);
+  })();
+  const VIA_COLOR: Record<string, string> = { "réf": "#5dcaa5", "nom": "#a5b4fc", "défaut": "#f59e0b", "journal": "#60a5fa", "pièce": "#f0a9c2" };
+  const ouvrirResultat = (r: any) => {
+    setSq("");
+    if (r.kind === "article") { router.push(`/articles/${r.id}`); }
+    else { const pa = APPS.find(a => a.nom === "PartStack"); if (pa) setShowApp({ url: withUser(pa.url), nom: pa.nom }); }
+  };
   const changeView = (m: "list" | "grid") => {
     setViewMode(m);
     try { localStorage.setItem("sv_launcher_view", m); } catch {}
@@ -322,6 +376,37 @@ export default function LauncherPage() {
           gap: "16px",
           zIndex: 1,
         }}>
+          {/* Barre de recherche globale (réf · nom · défaut · journal · pièces) */}
+          {can(user, "stock.view") && (
+            <div style={{ position: "relative", width: "100%", maxWidth: "560px", alignSelf: "center", marginBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "11px", background: "rgba(255,255,255,0.07)", border: `1px solid ${sq ? "rgba(255,77,90,0.5)" : "rgba(255,255,255,0.12)"}`, borderRadius: "16px", padding: "13px 15px", transition: "border-color 0.15s" }}>
+                <span style={{ color: "#ff4d5a", fontSize: "16px" }}>🔍</span>
+                <input value={sq} onFocus={chargerRecherche} onChange={e => setSq(e.target.value)}
+                  placeholder="Rechercher partout — réf, nom, défaut, journal, pièces…"
+                  style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "white", fontSize: "14px", fontFamily: "inherit", minWidth: 0 }} />
+                {sq && <button onClick={() => setSq("")} aria-label="Effacer" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: "15px" }}>✕</button>}
+              </div>
+              {sq.trim().length > 0 && (
+                <div style={{ position: "absolute", left: 0, right: 0, top: "58px", background: "#242a54", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "16px", overflow: "hidden", zIndex: 20, maxHeight: "380px", overflowY: "auto", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}>
+                  {sqLoading && stock === null ? (
+                    <div style={{ padding: "18px", textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: "13px" }}>Chargement…</div>
+                  ) : sqResults.length === 0 ? (
+                    <div style={{ padding: "18px", textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: "13px" }}>Aucun résultat pour « {sq} »</div>
+                  ) : sqResults.map((r: any, i: number) => (
+                    <button key={i} onClick={() => ouvrirResultat(r)} style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "10px 15px", background: "transparent", border: "none", borderTop: i ? "1px solid rgba(255,255,255,0.05)" : "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
+                      <span style={{ width: "34px", height: "34px", borderRadius: "9px", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "17px", flexShrink: 0 }}>{r.emoji}</span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: "block", fontSize: "13.5px", color: "white", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title}</span>
+                        <span style={{ display: "block", fontSize: "11px", color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.ref}{r.sub ? " · " + r.sub : ""}</span>
+                      </span>
+                      <span style={{ flexShrink: 0, fontSize: "9px", fontWeight: 700, color: VIA_COLOR[r.via] || "#aaa", background: "rgba(255,255,255,0.07)", borderRadius: "50px", padding: "3px 9px" }}>{r.via}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Toggle disposition : Liste / Icônes */}
           <div style={{ display: "inline-flex", alignSelf: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "999px", padding: "4px", gap: "4px", marginBottom: "6px" }}>
             {([["list", "☰", "Liste"], ["grid", "▦", "Icônes"]] as const).map(([m, ic, lbl]) => (
