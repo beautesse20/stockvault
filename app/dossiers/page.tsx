@@ -121,11 +121,26 @@ export default function DossiersPage() {
   // Version "collapsée" (sans séparateurs) → « I15PMHS » trouve « I15PM-HS ».
   const collapse = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const qc = collapse(q);
-  const resultats = q.length === 0 ? [] : articles.filter((a: any) => {
-    const ref = (a.ref || "").toLowerCase(), nom = (a.nom || "").toLowerCase();
-    if (ref.includes(q) || nom.includes(q)) return true;
-    return qc.length >= 3 && (collapse(ref).includes(qc) || collapse(nom).includes(qc));
-  });
+  // Recherche CLASSÉE : la référence prime toujours, puis le nom, puis — seulement
+  // pour les requêtes ≥3 car. — le défaut et le journal. Les champs secondaires
+  // n'entravent donc pas l'exactitude d'une recherche de réf (toujours en tête).
+  const matchTxt = (s: string) => s.includes(q) || (qc.length >= 3 && collapse(s).includes(qc));
+  const resultats = q.length === 0 ? [] : articles
+    .map((a: any) => {
+      const ref = (a.ref || "").toLowerCase(), nom = (a.nom || "").toLowerCase();
+      const defaut = (a.defaut || "").toLowerCase();
+      const journal = Array.isArray(a.historique) ? a.historique.map((h: any) => h?.texte || "").join(" ").toLowerCase() : "";
+      let score = 0;
+      if (ref === q) score = 120;                 // réf exacte
+      else if (matchTxt(ref)) score = 100;         // réf
+      if (matchTxt(nom)) score = Math.max(score, 50);              // nom
+      if (q.length >= 3 && defaut.includes(q)) score = Math.max(score, 20);   // défaut
+      if (q.length >= 3 && journal.includes(q)) score = Math.max(score, 10);  // journal
+      return { a, score };
+    })
+    .filter((x: any) => x.score > 0)
+    .sort((x: any, y: any) => y.score - x.score)
+    .map((x: any) => x.a);
 
   // Statut "en ligne" (plateformes marketplace) — chargé en LAZY + cache, uniquement
   // quand une recherche enrichie (≤3 résultats) le nécessite. Zéro impact ailleurs.
