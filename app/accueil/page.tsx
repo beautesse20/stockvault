@@ -120,6 +120,7 @@ export default function LauncherPage() {
   const [stock, setStock]     = useState<any[] | null>(null); // null = pas encore chargé
   const [parts, setParts]     = useState<any[]>([]);
   const [sqLoading, setSqLoading] = useState(false);
+  const [sqRO, setSqRO] = useState(true); // lecture seule au repos → bloque l'autofill iOS (mot de passe)
   const chargerRecherche = async () => {
     if (stock !== null || sqLoading) return;            // chargé une seule fois
     setSqLoading(true);
@@ -381,8 +382,11 @@ export default function LauncherPage() {
             <div style={{ position: "relative", width: "100%", maxWidth: "560px", alignSelf: "center", marginBottom: "14px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "11px", background: "rgba(255,255,255,0.07)", border: `1px solid ${sq ? "rgba(255,77,90,0.5)" : "rgba(255,255,255,0.12)"}`, borderRadius: "16px", padding: "13px 15px", transition: "border-color 0.15s" }}>
                 <span style={{ color: "#ff4d5a", fontSize: "16px" }}>🔍</span>
-                <input value={sq} onFocus={chargerRecherche} onChange={e => setSq(e.target.value)}
-                  type="search" name="sv-recherche" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+                <input value={sq} readOnly={sqRO}
+                  onFocus={() => { setSqRO(false); chargerRecherche(); }}
+                  onBlur={() => setSqRO(true)}
+                  onChange={e => setSq(e.target.value)}
+                  type="search" name="sv-recherche" inputMode="search" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
                   data-1p-ignore="true" data-lpignore="true" data-form-type="other"
                   placeholder="Rechercher partout — réf, nom, défaut, journal, pièces…"
                   style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "white", fontSize: "14px", fontFamily: "inherit", minWidth: 0 }} />
