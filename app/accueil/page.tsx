@@ -382,6 +382,8 @@ export default function LauncherPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "11px", background: "rgba(255,255,255,0.07)", border: `1px solid ${sq ? "rgba(255,77,90,0.5)" : "rgba(255,255,255,0.12)"}`, borderRadius: "16px", padding: "13px 15px", transition: "border-color 0.15s" }}>
                 <span style={{ color: "#ff4d5a", fontSize: "16px" }}>🔍</span>
                 <input value={sq} onFocus={chargerRecherche} onChange={e => setSq(e.target.value)}
+                  type="search" name="sv-recherche" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+                  data-1p-ignore="true" data-lpignore="true" data-form-type="other"
                   placeholder="Rechercher partout — réf, nom, défaut, journal, pièces…"
                   style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "white", fontSize: "14px", fontFamily: "inherit", minWidth: 0 }} />
                 {sq && <button onClick={() => setSq("")} aria-label="Effacer" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: "15px" }}>✕</button>}
